@@ -26,11 +26,11 @@ impl Iterator for RenderingIterator {
             match renderable {
                 Renderable::File(file) => {
                     let parser = ParserBuilder::with_stdlib().build().unwrap();
-                    let template = parser.parse(file.relative_path.to_str()?).unwrap();
+                    let template = parser.parse(&file.relative_path).unwrap();
                     let relative_path = template.render(&self.globals).unwrap();
-                    let mut relative_path = PathBuf::from(relative_path);
+                    let mut xrelative_path = PathBuf::from(&file.relative_path);
 
-                    if let Some(extention) = file.relative_path.extension() {
+                    if let Some(extention) = xrelative_path.extension() {
                         if extention != "liquid" {
                             return Some(Ok(Renderable::File(File {
                                 relative_path,
@@ -42,18 +42,18 @@ impl Iterator for RenderingIterator {
                     let template = parser.parse(file.content.as_str()).unwrap();
                     let content = template.render(&self.globals).unwrap();
 
-                    relative_path.set_extension("");
+                    xrelative_path.set_extension("");
                     return Some(Ok(Renderable::File(File {
-                        relative_path,
+                        relative_path: xrelative_path.to_string_lossy().into_owned(),
                         content,
                     })));
                 }
                 Renderable::Directory(directory) => {
                     let parser = ParserBuilder::with_stdlib().build().unwrap();
-                    let template = parser.parse(directory.relative_path.to_str()?).unwrap();
+                    let template = parser.parse(&directory.relative_path).unwrap();
                     let path = template.render(&self.globals).unwrap();
                     let directory = Directory {
-                        relative_path: PathBuf::from(path),
+                        relative_path: path,
                     };
                     return Some(Ok(Renderable::Directory(directory)));
                 }

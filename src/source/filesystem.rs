@@ -30,7 +30,8 @@ impl Iterator for FilesystemIterator {
             match dir.next() {
                 Some(Ok(entry)) => {
                     let path = entry.path();
-                    let relative_path = path.strip_prefix(&self.root).unwrap().to_path_buf();
+                    let relative_path =
+                        path.strip_prefix(&self.root).unwrap().to_str()?.to_string();
                     if path.is_dir() {
                         self.stack.push(fs::read_dir(&path).unwrap());
                         return Some(Ok(Renderable::Directory(Directory::new(relative_path))));

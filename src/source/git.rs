@@ -102,10 +102,9 @@ impl Iterator for GithubRepoIterator {
         while let Some(item) = self.queue.pop_front() {
             let relative_path = if item.path.starts_with(&self.path) {
                 let start = self.path.len();
-                let path_str = &item.path[start..].trim_start_matches('/');
-                std::path::PathBuf::from(path_str)
+                item.path[start..].trim_start_matches('/').to_string()
             } else {
-                std::path::PathBuf::from(&item.path)
+                item.path.to_string()
             };
             match item.item_type {
                 GitHubItemType::File => {
@@ -113,7 +112,7 @@ impl Iterator for GithubRepoIterator {
                         match get_file_content(&url, self.token.as_deref()) {
                             Ok(Some(content)) => {
                                 return Some(Ok(Renderable::File(File::new(
-                                    std::path::PathBuf::from(relative_path),
+                                    relative_path,
                                     content,
                                 ))));
                             }
@@ -142,9 +141,7 @@ impl Iterator for GithubRepoIterator {
                         self.queue.push_front(item);
                     }
 
-                    return Some(Ok(Renderable::Directory(Directory::new(
-                        std::path::PathBuf::from(relative_path),
-                    ))));
+                    return Some(Ok(Renderable::Directory(Directory::new(relative_path))));
                 }
             }
         }

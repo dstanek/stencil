@@ -53,7 +53,7 @@ fn show_file_diff(
     let new_content = new.content.as_str();
 
     // Files are identical so no need to show a diff
-    if old_path != std::path::Path::new("/dev/null") && old_content == new_content {
+    if old_path != "/dev/null" && old_content == new_content {
         return Ok(());
     }
     // Compute the diff between the two files
@@ -63,33 +63,21 @@ fn show_file_diff(
     write(
         &mut handle,
         Color::Yellow,
-        format!(
-            "diff --git a/{} b/{}\n",
-            new_path.display(),
-            new_path.display()
-        ),
+        format!("diff --git a/{} b/{}\n", new_path, new_path),
     )?;
-    if old_path != std::path::Path::new("/dev/null") {
-        write(
-            &mut handle,
-            Color::Blue,
-            format!("--- old/{}\n", old_path.display()),
-        )?;
+    if old_path != "/dev/null" {
+        write(&mut handle, Color::Blue, format!("--- old/{}\n", old_path))?;
     } else {
         write(
             &mut handle,
             Color::Blue,
-            format!("--- old/{}    (file not found)\n", new_path.display()),
+            format!("--- old/{}    (file not found)\n", new_path),
         )?;
     }
     if new_content.is_empty() {
-        write!(
-            &mut handle,
-            "+++ new/{}    (new empty file)\n",
-            new_path.display()
-        )?;
+        write!(&mut handle, "+++ new/{}    (new empty file)\n", new_path)?;
     } else {
-        write!(&mut handle, "+++ new/{}\n", new_path.display())?;
+        write!(&mut handle, "+++ new/{}\n", new_path)?;
     }
 
     // Iterate over the diff hunks
@@ -175,21 +163,23 @@ fn show_directory_diff(
     mut handle: &mut StandardStreamLock,
     dir: &Directory,
 ) -> Result<(), StencilError> {
-    let rp = dir.relative_path.display();
     write(
         &mut handle,
         Color::Yellow,
-        format!("diff --git a/{} b/{}\n", rp, rp,),
+        format!(
+            "diff --git a/{} b/{}\n",
+            dir.relative_path, dir.relative_path,
+        ),
     )?;
     write(
         &mut handle,
         Color::Blue,
-        format!("--- old/{}    (directory not found)\n", rp),
+        format!("--- old/{}    (directory not found)\n", dir.relative_path),
     )?;
     write(
         &mut handle,
         Color::White,
-        format!("+++ new/{}    (new directory)\n\n", rp),
+        format!("+++ new/{}    (new directory)\n\n", dir.relative_path),
     )?;
     Ok(())
 }
