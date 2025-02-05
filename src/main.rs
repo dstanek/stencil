@@ -1,11 +1,9 @@
 use std::fs;
-use std::io::Write;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 use clap::{CommandFactory, Parser, Subcommand};
-use source::factory::renderables;
-use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
+use termcolor::{Color, ColorChoice, StandardStream};
 
 mod diff;
 mod error;
@@ -15,10 +13,9 @@ mod source;
 mod target_config;
 
 use error::StencilError;
-use output::write_bold;
 use render::RenderingIterator;
 //use source::filesystem::{FilesystemCrawler, FilesystemIterator};
-use source::model::Renderable;
+use source::Renderable;
 use target_config::TargetConfig;
 
 // FilesystemIterator    -> (File/Directory)
@@ -64,7 +61,7 @@ struct InitArgs {
     #[arg(help = "Destination path")] // TODO: i hate the word dest - something better?
     dest: String,
 
-    #[arg(help = "Stencil source (file:// or git://)")]
+    #[arg(help = "Stencil source (file:// or github://owner/repo)")]
     src: String,
 
     #[arg(long = "no-diff", help = "Disable diff output", action = clap::ArgAction::SetFalse)]
@@ -98,7 +95,7 @@ fn main() {
     if let Err(err) = run() {
         // Write a colored error message to stderr
         let mut stderr = StandardStream::stderr(ColorChoice::Auto);
-        write_bold(&mut stderr, Color::Red, format!("Error: {}\n", err)).unwrap();
+        output::write_bold(&mut stderr, Color::Red, format!("Error: {}\n", err)).unwrap();
 
         // Set a non-zero exit code
         std::process::exit(1);
@@ -183,7 +180,7 @@ fn init(show_diff: bool, dest: &PathBuf, src: &str) -> Result<(), StencilError> 
     apply_changes(&dest, &config)?;
 
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
-    write_bold(
+    output::write_bold(
         &mut stdout,
         Color::Green,
         format!("Successfully initialized {}", dest.display()),
@@ -364,7 +361,8 @@ fn apply_changes(dest: &PathBuf, config: &TargetConfig) -> Result<(), StencilErr
 
 pub fn create_iterator(config: &TargetConfig) -> Result<RenderingIterator, StencilError> {
     let stencil_path = PathBuf::from(&config.project.src);
-    let iterator = renderables(&config.project.src)?;
+
+    let iterator = source::renderables(&config.project.src)?;
     //let iterator = match FilesystemCrawler::new(stencil_path.as_path()).crawl() {
     //   Ok(iterator) => iterator,
     //  Err(e) => {

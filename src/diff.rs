@@ -6,7 +6,7 @@ use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, StandardStreamLoc
 
 use crate::error::StencilError;
 use crate::output::write;
-use crate::source::model::{Directory, File, Renderable};
+use crate::source::{Directory, File, Renderable};
 use crate::target_config::TargetConfig;
 
 pub fn show_diff(
@@ -40,7 +40,7 @@ pub fn show_diff(
                 // println!("File: {:?}", file.relative_path);
                 let orig_filename = dest.join(&file.relative_path);
                 let orig_file = match orig_filename.exists() {
-                    true => File::new(file.relative_path.clone(), &orig_filename),
+                    true => File::from_path(file.relative_path.clone(), &orig_filename).unwrap(),
                     false => File::empty(),
                 };
                 // println!("File: {:?} {:?}", file.relative_path, file.content);

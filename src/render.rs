@@ -4,22 +4,25 @@ use liquid::ParserBuilder;
 use liquid::{object, Object};
 
 use crate::error::StencilError;
-use crate::source::filesystem::FilesystemIterator;
-use crate::source::model::{Directory, File, Renderable};
+use crate::source::{Directory, File, Renderable};
 use crate::target_config::TargetConfig;
 
 pub struct RenderingIterator {
-    pub iterator: FilesystemIterator,
+    pub renderables: Vec<Renderable>,
     pub globals: Object,
+    pub index: usize,
 }
 
 impl Iterator for RenderingIterator {
     type Item = Result<Renderable, StencilError>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        while let Some(renderable) = self.iterator.next() {
+        while self.index < self.renderables.len() {
+            let renderable = &self.renderables[self.index];
+            self.index += 1;
+
             match renderable {
-                Ok(Renderable::File(file)) => {
+                Renderable::File(file) => {
                     let parser = ParserBuilder::with_stdlib().build().unwrap();
                     let template = parser.parse(file.relative_path.to_str()?).unwrap();
                     let relative_path = template.render(&self.globals).unwrap();
@@ -29,7 +32,7 @@ impl Iterator for RenderingIterator {
                         if extention != "liquid" {
                             return Some(Ok(Renderable::File(File {
                                 relative_path,
-                                content: file.content,
+                                content: file.content.clone(), // TODO: can i get rid of this clone?
                             })));
                         }
                     }
@@ -44,7 +47,7 @@ impl Iterator for RenderingIterator {
                         content,
                     })));
                 }
-                Ok(Renderable::Directory(directory)) => {
+                Renderable::Directory(directory) => {
                     let parser = ParserBuilder::with_stdlib().build().unwrap();
                     let template = parser.parse(directory.relative_path.to_str()?).unwrap();
                     let path = template.render(&self.globals).unwrap();
@@ -54,7 +57,6 @@ impl Iterator for RenderingIterator {
                     };
                     return Some(Ok(Renderable::Directory(directory)));
                 }
-                Err(e) => return Some(Err(e)),
             }
         }
         None
@@ -62,10 +64,14 @@ impl Iterator for RenderingIterator {
 }
 
 impl RenderingIterator {
-    pub fn new(iterator: FilesystemIterator, config: &TargetConfig) -> RenderingIterator {
+    pub fn new(renderables: Vec<Renderable>, config: &TargetConfig) -> RenderingIterator {
         let globals = object!({
             "project_name": config.project.name,
         });
-        RenderingIterator { iterator, globals }
+        RenderingIterator {
+            renderables,
+            globals,
+            index: 0,
+        }
     }
 }

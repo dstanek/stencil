@@ -4,6 +4,9 @@ use std::path::PathBuf;
 use crate::error::StencilError;
 // use crate::target_config::TargetConfig;
 
+pub trait RenderableIterator: Iterator<Item = Result<Renderable, StencilError>> {}
+impl<T> RenderableIterator for T where T: Iterator<Item = Result<Renderable, StencilError>> {}
+
 pub trait StencilSource {
     //     fn config(&self) -> Result<TargetConfig, StencilError>;
     // The iterate method will return an Iterator of Renderable items.
@@ -16,16 +19,22 @@ pub struct File {
 }
 
 impl File {
-    pub fn new(relative_path: PathBuf, fully_qualified_path: &PathBuf) -> Self {
-        let content = match fs::read_to_string(fully_qualified_path) {
-            Ok(content) => content,
-            Err(_) => "".to_string(),
-            // TODO: Err(e) => return Some(Err(e)),
-        };
+    pub fn new(relative_path: PathBuf, content: String) -> Self {
         File {
             relative_path,
-            content: content.to_string(),
+            content,
         }
+    }
+
+    pub fn from_path(
+        relative_path: PathBuf,
+        fully_qualified_path: &PathBuf,
+    ) -> Result<Self, std::io::Error> {
+        let content = fs::read_to_string(fully_qualified_path)?;
+        Ok(File {
+            relative_path,
+            content,
+        })
     }
 
     pub fn empty() -> Self {
