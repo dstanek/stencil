@@ -1,3 +1,5 @@
+// Copyright 2024-2025 David Stanek <dstanek@dstanek.com>
+
 mod config;
 mod factory;
 mod filesystem;

@@ -15,4 +15,4 @@ RUN \
     uv venv ${UV_VENV} && \
     uv pip install -r requirements.txt --python ${UV_VENV}/bin/python
 
-CMD ["pytest", "tests.py", "-v"]
+CMD ["pytest", "tests.py", "-vv"]

@@ -17,6 +17,7 @@ stencil:
 tests: $(TEST_IMAGE_DETAILS) stencil
 	@echo "Running tests..."
 	@$(DOCKER) run --rm \
+		-e GITHUB_TOKEN \
 		-v $(PWD)/tests/:/tests:Z \
 		-v $(PWD)/target/debug/:/stencil:Z \
 		$(TEST_IMAGE_NAME)

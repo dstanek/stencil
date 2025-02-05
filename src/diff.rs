@@ -1,5 +1,6 @@
+// Copyright 2024-2025 David Stanek <dstanek@dstanek.com>
+
 use similar::{ChangeTag, TextDiff};
-use std::fmt::Arguments;
 use std::io::Write;
 use std::path::PathBuf;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, StandardStreamLock, WriteColor};
@@ -17,37 +18,21 @@ pub fn show_diff(
     let stdout = StandardStream::stdout(ColorChoice::Always);
     let mut stdout_lock = stdout.lock();
 
-    let stencil_path = PathBuf::from(&config.project.src);
-    //let iterator = match file::FilesystemCrawler::new(stencil_path.as_path()).crawl() {
-    //    Ok(iterator) => iterator,
-    //    Err(e) => {
-    //        eprintln!("Error: {}", e);
-    //        std::process::exit(1);
-    //    }
-    //};
-    //let iterator = RenderingIterator::new(iterator, &config);
-    //let mut ignore = Vec::new();
-    // ignore.push(".gitignore".to_string());
+    // TODO: implement a way to ignore certain files
+    // let mut ignore = Vec::new();
     // ignore.push("README.md".to_string());
-    // ignore.push("main.tf".to_string());
-    // ignore.push("outputs.tf".to_string());
-    // ignore.push("terraform.tf".to_string());
-    // ignore.push("variables.tf".to_string());
 
     for entry in changes {
         match entry {
             Renderable::File(file) => {
-                // println!("File: {:?}", file.relative_path);
                 let orig_filename = dest.join(&file.relative_path);
                 let orig_file = match orig_filename.exists() {
                     true => File::from_path(file.relative_path.clone(), &orig_filename).unwrap(),
                     false => File::empty(),
                 };
-                // println!("File: {:?} {:?}", file.relative_path, file.content);
                 show_file_diff(&mut stdout_lock, &orig_file, &file)?;
             }
             Renderable::Directory(dir) => {
-                // println!("Directory: {:?}", dir.relative_path);
                 if !dest.join(&dir.relative_path).exists() {
                     show_directory_diff(&mut stdout_lock, &dir)?;
                 };
@@ -206,16 +191,5 @@ fn show_directory_diff(
         Color::White,
         format!("+++ new/{}    (new directory)\n\n", rp),
     )?;
-    Ok(())
-}
-
-fn write_color(
-    handle: &mut StandardStreamLock,
-    color: Color,
-    args: Arguments,
-) -> Result<(), StencilError> {
-    handle.set_color(ColorSpec::new().set_fg(Some(color)))?;
-    write!(handle, "{}", args)?;
-    handle.reset()?;
     Ok(())
 }

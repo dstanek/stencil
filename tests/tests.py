@@ -186,6 +186,7 @@ def describe_stencil_lifecycle():
 
 #                    }
 #                    assert files == expected_files
+
         def it_contains_new_file_in_the_diff(stencil_apply):
             stencil_apply.result.stdout_contains("--- old/my_project/__version__.py    (file not found)")
             stencil_apply.result.stdout_contains("+++ new/my_project/__version__.py")
@@ -252,12 +253,100 @@ def describe_stencil_lifecycle():
 #                            'stencil/.github/CODEOWNERS': '* @
 #    
 
-# stencil init output/dest ./stencil1_src
-# stencil init output/dest ./stencil1_src//stencil_alt
-# stencil init output/dest https://github.com/dstanek/stencil1_src.git
-# stencil init output/dest https://github.com/dstanek/stencil1_src.git//stencil_alt
+def describe_github_stencil():
 
+    STENCIL_PATH = "gh://dstanek/stencil-test"
+
+    @pytest.fixture(scope="module")
+    def stencil_init(tmp_path_factory):
+        tmp_path = tmp_path_factory.mktemp("output") / "output"
+        yield Stencil("init", str(tmp_path), STENCIL_PATH, dest=tmp_path)
+
+    def describe_successful_init():
+
+        def it_returns_success(stencil_init):
+            (stencil_init.result
+                .returncode(0)
+                .stdout_contains(f"Successfully initialized {stencil_init.dest}"))
+
+        def it_creates_directory(stencil_init):
+            assert Path(stencil_init.dest).exists()
+    
+        def it_creates_files(stencil_init):
+            files = slurp(Path(stencil_init.dest))
+            expected_files = {
+                ".github/CODEOWNERS": "* @all_the_engineers\n* @all_the_managers",
+                ".stencil.toml": f'[stencil]\nversion = "1"\n\n[project]\nname = "my_project"\nsrc = "{STENCIL_PATH}"\n',
+                "README.md": "# my_project Documentation\n\nX\nY\nZ\n",
+                "pyproject.toml": "[project]\nname = my_project",
+                "my_project/__init__.py": "",
+                "my_project/__version__.py": "__version__ = \"TODO: your version here\"",
+                "tests/__init__.py": "",
+                "tests/test_example.py": "# some example tests\ndef test():\n    assert True"
+            }
+            assert files == expected_files
+
+        def it_contains_new_directories_in_the_diff(stencil_init):
+            stencil_init.result.stdout_contains("--- old/my_project    (directory not found)")
+            stencil_init.result.stdout_contains("+++ new/my_project    (new directory)")
+
+        def it_contains_new_empty_file_in_the_diff(stencil_init):
+            stencil_init.result.stdout_contains("--- old/my_project/__init__.py    (file not found)")
+            stencil_init.result.stdout_contains("+++ new/my_project/__init__.py    (new empty file)")
+
+        def it_contains_new_file_in_the_diff(stencil_init):
+            stencil_init.result.stdout_contains("--- old/pyproject.toml    (file not found)")
+            stencil_init.result.stdout_contains("+++ new/pyproject.toml")
+
+
+def describe_github_stencil_using_alternative_path():
+
+    STENCIL_PATH = "gh://dstanek/stencil-test/other_stencil"
+
+    @pytest.fixture(scope="module")
+    def stencil_init(tmp_path_factory):
+        tmp_path = tmp_path_factory.mktemp("output") / "output"
+        yield Stencil("init", str(tmp_path), STENCIL_PATH, dest=tmp_path)
+
+    def describe_successful_init():
+
+        def it_returns_success(stencil_init):
+            (stencil_init.result
+                .returncode(0)
+                .stdout_contains(f"Successfully initialized {stencil_init.dest}"))
+
+        def it_creates_directory(stencil_init):
+            assert Path(stencil_init.dest).exists()
+    
+        def it_creates_files(stencil_init):
+            files = slurp(Path(stencil_init.dest))
+            expected_files = {
+                ".github/CODEOWNERS": "* @all_the_engineers\n* @all_the_managers",
+                ".stencil.toml": f'[stencil]\nversion = "1"\n\n[project]\nname = "my_project"\nsrc = "{STENCIL_PATH}"\n',
+                "README.md": "# my_project Other Documentation\n\nA\nB\nC\n",
+                "pyproject.toml": "[project]\nname = my_project",
+                "my_project-other/__init__.py": "",
+                "my_project-other/__version__.py": "__version__ = \"TODO: your version here\"",
+                "tests/__init__.py": "",
+                "tests/test_example.py": "# some example tests\ndef test():\n    assert True"
+            }
+            assert files == expected_files
+
+        def it_contains_new_directories_in_the_diff(stencil_init):
+            stencil_init.result.stdout_contains("--- old/my_project-other    (directory not found)")
+            stencil_init.result.stdout_contains("+++ new/my_project-other    (new directory)")
+
+        def it_contains_new_empty_file_in_the_diff(stencil_init):
+            stencil_init.result.stdout_contains("--- old/my_project-other/__init__.py    (file not found)")
+            stencil_init.result.stdout_contains("+++ new/my_project-other/__init__.py    (new empty file)")
+
+        def it_contains_new_file_in_the_diff(stencil_init):
+            stencil_init.result.stdout_contains("--- old/pyproject.toml    (file not found)")
+            stencil_init.result.stdout_contains("+++ new/pyproject.toml")
 
 # Usecases:
   # directory changes show up as new directories
   # stencil does not keep track of things it needs to delete!
+
+# def describe_github_stencil_using_incorrect_path():
+#     pass

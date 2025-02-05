@@ -1,17 +1,12 @@
+// Copyright 2024-2025 David Stanek <dstanek@dstanek.com>
+
 use std::fs;
 use std::path::PathBuf;
 
 use crate::error::StencilError;
-// use crate::target_config::TargetConfig;
 
 pub trait RenderableIterator: Iterator<Item = Result<Renderable, StencilError>> {}
 impl<T> RenderableIterator for T where T: Iterator<Item = Result<Renderable, StencilError>> {}
-
-pub trait StencilSource {
-    //     fn config(&self) -> Result<TargetConfig, StencilError>;
-    // The iterate method will return an Iterator of Renderable items.
-    fn iterate(&self) -> Box<dyn Iterator<Item = Renderable>>;
-}
 
 pub struct File {
     pub relative_path: PathBuf,

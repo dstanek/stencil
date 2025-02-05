@@ -1,3 +1,5 @@
+// Copyright 2024-2025 David Stanek <dstanek@dstanek.com>
+
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
@@ -67,14 +69,23 @@ impl TargetConfig {
     }
 
     pub fn save(&self, path: &PathBuf, config: &TargetConfig) -> Result<(), StencilError> {
-        let contents = toml::to_string(config).unwrap();
+        let contents = match toml::to_string(config) {
+            Ok(contents) => contents,
+            Err(e) => return Err(StencilError::from(e)),
+        };
         fs::write(path, contents)?;
         Ok(())
     }
 
     pub fn load(path: &str) -> Result<TargetConfig, StencilError> {
-        let contents = fs::read_to_string(path)?;
-        let config: TargetConfig = toml::from_str(contents.as_str()).unwrap();
+        let contents = match fs::read_to_string(path) {
+            Ok(contents) => contents,
+            Err(e) => return Err(StencilError::from(e)),
+        };
+        let config: TargetConfig = match toml::from_str(contents.as_str()) {
+            Ok(config) => config,
+            Err(e) => return Err(StencilError::from(e)),
+        };
         match config.validate() {
             Ok(_) => Ok(config),
             Err(e) => Err(e),

@@ -1,3 +1,5 @@
+// Copyright 2024-2025 David Stanek <dstanek@dstanek.com>
+
 use std::path::PathBuf;
 
 use liquid::ParserBuilder;
@@ -41,7 +43,6 @@ impl Iterator for RenderingIterator {
                     let content = template.render(&self.globals).unwrap();
 
                     relative_path.set_extension("");
-                    // println!("relative_path: {:?}", relative_path);
                     return Some(Ok(Renderable::File(File {
                         relative_path,
                         content,
@@ -51,7 +52,6 @@ impl Iterator for RenderingIterator {
                     let parser = ParserBuilder::with_stdlib().build().unwrap();
                     let template = parser.parse(directory.relative_path.to_str()?).unwrap();
                     let path = template.render(&self.globals).unwrap();
-                    // println!("Rendered directory: {:?}", path);
                     let directory = Directory {
                         relative_path: PathBuf::from(path),
                     };

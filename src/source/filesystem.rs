@@ -1,5 +1,7 @@
+// Copyright 2024-2025 David Stanek <dstanek@dstanek.com>
+
 use std::fs::{self, ReadDir};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use crate::error::StencilError;
 use crate::source::model::{Directory, File, Renderable, RenderableIterator};

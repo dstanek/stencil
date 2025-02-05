@@ -1,8 +1,8 @@
+// Copyright 2024-2025 David Stanek <dstanek@dstanek.com>
+
 use std::collections::VecDeque;
 use std::env;
 
-use base64::engine::general_purpose::STANDARD as base64_engine;
-use base64::Engine;
 use serde::Deserialize;
 use serde_json;
 use ureq;
@@ -20,16 +20,10 @@ enum GitHubItemType {
 
 #[derive(Deserialize)]
 struct GitHubItem {
-    name: String,
     path: String,
     #[serde(rename = "type")]
     item_type: GitHubItemType,
     download_url: Option<String>,
-}
-
-#[derive(Deserialize)]
-struct GitHubFileContent {
-    content: String,
 }
 
 pub struct GithubRepoIterator {
@@ -38,8 +32,6 @@ pub struct GithubRepoIterator {
     path: String,
     token: Option<String>,
     queue: VecDeque<GitHubItem>,
-    //items: Vec<Content>,
-    //current_index: usize,
 }
 
 fn get_directory_contents(

@@ -1,5 +1,6 @@
+// Copyright 2024-2025 David Stanek <dstanek@dstanek.com>
+
 use std::convert::From;
-//use std::fmt;
 use std::io;
 
 use thiserror::Error;
@@ -16,8 +17,11 @@ pub enum StencilError {
     Other(String),
 
     // configuration errors
-    #[error("Deserialization erorr")]
-    Toml(#[from] toml::de::Error),
+    #[error("Deserialization error:{0}")]
+    TomlDeserialization(#[from] toml::de::Error),
+
+    #[error("Serialization error: {0}")]
+    TomlSerialization(#[from] toml::ser::Error),
 
     #[error("Validation error: {0}")]
     ConfigValidation(String),
@@ -31,24 +35,6 @@ impl StencilError {
         StencilError::Other(msg.to_string())
     }
 }
-
-//impl fmt::Display for StencilError {
-//    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-//        match self {
-//            StencilError::Io(err) => write!(f, "IO error: {}", err),
-//            StencilError::Other(msg) => write!(f, "Other error: {}", msg),
-//        }
-//    }
-//}
-
-//impl std::error::Error for StencilError {
-//    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-//        match self {
-//            StencilError::Io(err) => Some(err),
-//            StencilError::Other(_) => None,
-//        }
-//    }
-//}
 
 impl From<io::Error> for StencilError {
     fn from(error: io::Error) -> Self {

@@ -1,3 +1,5 @@
+// Copyright 2024-2025 David Stanek <dstanek@dstanek.com>
+
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -14,21 +16,8 @@ mod target_config;
 
 use error::StencilError;
 use render::RenderingIterator;
-//use source::filesystem::{FilesystemCrawler, FilesystemIterator};
 use source::Renderable;
 use target_config::TargetConfig;
-
-// FilesystemIterator    -> (File/Directory)
-// GitRepositoryIterator -> (File/Directory)
-//
-//     > RenderingIterator -> (File/Directory)
-//
-//         > AnnotateOriginalIterator -> (Pair<File/Directory>)
-//
-//             > CheckIterator -> (Pair<File/Directory>)
-//             > SyncIterator  -> (Pair<File/Directory>)
-//
-//                 > DiffIterator -> (Pair<File/Directory>)
 
 #[derive(Parser)]
 #[command(name = "stencil")]
@@ -117,7 +106,13 @@ fn run() -> Result<()> {
             let config_path = dest.join(&cli.config);
             let mut config = TargetConfig::load(config_path.to_str().unwrap())
                 .context(format!("loading config file: {}", config_path.display()))?;
-            let result = config.apply_overrides(cli.override_values)?;
+            match config.apply_overrides(cli.override_values) {
+                Ok(config) => config,
+                Err(e) => {
+                    eprintln!("Error: {}", e);
+                    std::process::exit(1);
+                }
+            }
             plan(&config, &dest)?;
         }
         Some(Commands::Apply(args)) => {
@@ -127,7 +122,13 @@ fn run() -> Result<()> {
             };
             let config_path = dest.join(&cli.config);
             let mut config = TargetConfig::load(config_path.to_str().unwrap())?;
-            let result = config.apply_overrides(cli.override_values)?;
+            match config.apply_overrides(cli.override_values) {
+                Ok(config) => config,
+                Err(e) => {
+                    eprintln!("Error: {}", e);
+                    std::process::exit(1);
+                }
+            }
             let dest = match &args.dest {
                 Some(dest) => PathBuf::from(dest),
                 None => std::env::current_dir()?,
@@ -153,7 +154,7 @@ fn init(show_diff: bool, dest: &PathBuf, src: &str) -> Result<(), StencilError> 
     // Create the destination directory
     fs::create_dir_all(dest)?;
 
-    // TODO: ask questions
+    // TODO: ask questions from the source config
 
     // Create the initial config file
     let config = TargetConfig {
@@ -220,7 +221,6 @@ fn apply(
     }
     // 1. display diff
     // 2. run apply
-    //apply_changes(&config)?;
     return apply_changes(dest, config);
 }
 
@@ -232,68 +232,9 @@ fn _show(config: &TargetConfig) {
 }
 
 // An iterator that wraps FilesystemIterator and applies the rendering logic
-//struct FilePair {
-//    original: Renderable,
-//    rendered: Renderable,
-//}
-
-//struct AnnotateOriginalIterator {
-//    iterator: FilesystemIterator,
-//    globals: Object,
-//}
-
-//impl Iterator for AnnotateOriginalIterator {
-//    type Item = Result<FilePair, StencilError>;
-
-//    fn next(&mut self) -> Option<Self::Item> {
-//        while let Some(renderable) = self.iterator.next() {
-//            match renderable {
-//                Ok(Renderable::File(file)) => {
-//                    let parser = ParserBuilder::with_stdlib().build().unwrap();
-//                    let template = parser.parse(file.path.as_str()).unwrap();
-//                    let path = template.render(&self.globals).unwrap();
-//
-//                    let template = parser.parse(file.content.as_str()).unwrap();
-//                    let content = template.render(&self.globals).unwrap();
-//
-//                    return Some(Ok(Renderable::File(File { path, content })));
-//                }
-//                Ok(Renderable::Directory(directory)) => {
-//                    let parser = ParserBuilder::with_stdlib().build().unwrap();
-//                    let template = parser.parse(directory.path.as_str()).unwrap();
-//                    let path = template.render(&self.globals).unwrap();
-//                    let directory = Directory { path };
-//                    return Some(Ok(Renderable::Directory(directory)));
-//                }
-//                Err(e) => return Some(Err(e)),
-//            }
-//        }
-//        None
-//    }
-//}
-
-//impl AnnotateOriginalIterator {
-//    fn new(
-//        iterator: FilesystemIterator,
-//        config: &TargetConfig,
-//    ) -> AnnotateOriginalIterator {
-//        let globals = object!({
-//            "project_name": config.project.name,
-//        });
-//        AnnotateOriginalIterator { iterator, globals }
-//    }
-//}
-
-// An iterator that wraps FilesystemIterator and applies the rendering logic
 
 fn apply_changes(dest: &PathBuf, config: &TargetConfig) -> Result<(), StencilError> {
-    let stencil_path = PathBuf::from(&config.project.src);
     let iterator = create_iterator(&config)?;
-    //let iterator = match FilesystemCrawler::new(stencil_path.as_path()).crawl() {
-    //    Ok(iterator) => iterator,
-    //    Err(e) => return Err(e),
-    //
-    // for entry in RenderingIterator::new(iterator, &config) {
     for entry in iterator {
         match entry {
             Ok(Renderable::Directory(dir)) => {
@@ -382,6 +323,7 @@ pub fn create_iterator(config: &TargetConfig) -> Result<RenderingIterator, Stenc
     //return Ok(CheckIterator::new(iterator, ignore));
 }
 
+// TODO: implement a way to ignore certain files
 //fn filter_files(iterator: FilesystemIterator, ignore: Vec<String>) -> Vec<Renderable> {
 //    let d = iterator
 //        .filter_map(|result| match result {

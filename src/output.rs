@@ -1,3 +1,5 @@
+// Copyright 2024-2025 David Stanek <dstanek@dstanek.com>
+
 use termcolor::{Color, ColorSpec, WriteColor};
 
 use crate::error::StencilError;
@@ -19,14 +21,3 @@ pub fn write_bold(
     stream.reset()?;
     Ok(())
 }
-
-// fn write_color(
-//     handle: &mut StandardStreamLock,
-//     color: Color,
-//     args: Arguments,
-// ) -> Result<(), StencilError> {
-//     handle.set_color(ColorSpec::new().set_fg(Some(color)))?;
-//     write!(handle, "{}", args)?;
-//     handle.reset()?;
-//     Ok(())
-// }
