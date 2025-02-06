@@ -9,7 +9,7 @@ use ureq;
 use ureq::Error;
 
 use super::model::{Directory, File, Renderable, RenderableIterator};
-use crate::error::StencilError;
+use stencil_error::StencilError;
 
 #[derive(Deserialize)]
 #[serde(rename_all = "lowercase")]

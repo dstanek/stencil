@@ -5,10 +5,10 @@ use std::io::Write;
 use std::path::PathBuf;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, StandardStreamLock, WriteColor};
 
-use crate::error::StencilError;
 use crate::output::write;
-use crate::source::{Directory, File, Renderable};
 use crate::target_config::TargetConfig;
+use stencil_error::StencilError;
+use stencil_source::{Directory, File, Renderable};
 
 pub fn show_diff(
     changes: &Vec<Renderable>,

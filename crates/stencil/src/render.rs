@@ -5,9 +5,9 @@ use std::path::PathBuf;
 use liquid::ParserBuilder;
 use liquid::{object, Object};
 
-use crate::error::StencilError;
-use crate::source::{Directory, File, Renderable};
 use crate::target_config::TargetConfig;
+use stencil_error::StencilError;
+use stencil_source::{Directory, File, Renderable};
 
 pub struct RenderingIterator {
     pub renderables: Vec<Renderable>,

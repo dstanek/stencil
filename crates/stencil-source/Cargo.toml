@@ -1,6 +1,6 @@
 [package]
-name = "stencil"
-version = "0.1.0"
+name = "stencil-source"
+version = "0.0.1"
 edition = { workspace = true }
 rust-version = { workspace = true }
 homepage = { workspace = true }
@@ -8,19 +8,10 @@ documentation = { workspace = true }
 repository = { workspace = true }
 authors = { workspace = true }
 license = { workspace = true }
-default-run = "stencil"
 
 [dependencies]
 stencil-error = { workspace = true }
-stencil-source = { workspace = true }
 
 serde = { workspace = true }
-toml = { workspace = true }
-
-anyhow = "1.0.91"
-async-trait = "0.1.86"
-base64 = "0.22.1"
-clap = { version = "4.5.20", features = ["derive"] }
-liquid = "0.26.9"
-similar = "2.6.0"
-termcolor = "1.4.1"
+serde_json = { workspace = true }
+ureq = { workspace = true }

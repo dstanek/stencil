@@ -7,7 +7,7 @@ use std::path::PathBuf;
 use serde::Deserialize;
 use serde::Serialize;
 
-use crate::error::StencilError;
+use stencil_error::StencilError;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct TargetConfig {

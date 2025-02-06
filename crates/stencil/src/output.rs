@@ -2,7 +2,7 @@
 
 use termcolor::{Color, ColorSpec, WriteColor};
 
-use crate::error::StencilError;
+use stencil_error::StencilError;
 
 pub fn write(stream: &mut dyn WriteColor, color: Color, msg: String) -> Result<(), StencilError> {
     stream.set_color(ColorSpec::new().set_fg(Some(color)))?;

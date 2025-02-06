@@ -3,8 +3,8 @@
 use std::fs::{self, ReadDir};
 use std::path::PathBuf;
 
-use crate::error::StencilError;
-use crate::source::model::{Directory, File, Renderable, RenderableIterator};
+use crate::model::{Directory, File, Renderable, RenderableIterator};
+use stencil_error::StencilError;
 
 pub struct FilesystemIterator {
     stack: Vec<ReadDir>,

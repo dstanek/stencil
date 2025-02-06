@@ -8,15 +8,13 @@ use clap::{CommandFactory, Parser, Subcommand};
 use termcolor::{Color, ColorChoice, StandardStream};
 
 mod diff;
-mod error;
 mod output;
 mod render;
-mod source;
 mod target_config;
 
-use error::StencilError;
 use render::RenderingIterator;
-use source::Renderable;
+use stencil_error::StencilError;
+use stencil_source::{renderables, Renderable};
 use target_config::TargetConfig;
 
 #[derive(Parser)]
@@ -301,9 +299,7 @@ fn apply_changes(dest: &PathBuf, config: &TargetConfig) -> Result<(), StencilErr
 //}
 
 pub fn create_iterator(config: &TargetConfig) -> Result<RenderingIterator, StencilError> {
-    let stencil_path = PathBuf::from(&config.project.src);
-
-    let iterator = source::renderables(&config.project.src)?;
+    let iterator = renderables(&config.project.src)?;
     //let iterator = match FilesystemCrawler::new(stencil_path.as_path()).crawl() {
     //   Ok(iterator) => iterator,
     //  Err(e) => {

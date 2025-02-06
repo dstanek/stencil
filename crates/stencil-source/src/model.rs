@@ -3,7 +3,7 @@
 use std::fs;
 use std::path::PathBuf;
 
-use crate::error::StencilError;
+use stencil_error::StencilError;
 
 pub trait RenderableIterator: Iterator<Item = Result<Renderable, StencilError>> {}
 impl<T> RenderableIterator for T where T: Iterator<Item = Result<Renderable, StencilError>> {}

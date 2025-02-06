@@ -2,10 +2,10 @@
 
 use std::path::PathBuf;
 
-use crate::error::StencilError;
-use crate::source::filesystem::FilesystemIterator;
-use crate::source::git::GithubRepoIterator;
-use crate::source::model::Renderable;
+use crate::filesystem::FilesystemIterator;
+use crate::git::GithubRepoIterator;
+use crate::model::Renderable;
+use stencil_error::StencilError;
 
 pub fn renderables(source: &String) -> Result<Vec<Renderable>, StencilError> {
     // TODO: maybe add Github Enterprise and Gitlab support?
