@@ -18,15 +18,15 @@ class Result:
 
     def strip_color_codes(self, text: str) -> str:
         return re.sub(r"\x1b\[[0-9;]*m", "", text)
-    
+
     def stdout_contains(self, text: str):
         assert text in self.strip_color_codes(self.res.stdout)
         return self
-    
+
     def not_stdout_contains(self, text: str):
         assert text not in self.strip_color_codes(self.res.stdout)
         return self
-    
+
     def stderr_contains(self, text: str):
         assert text in self.strip_color_codes(self.res.stderr)
         return self
@@ -96,14 +96,14 @@ def describe_stencil_lifecycle():
 
         def it_creates_directory(stencil_init):
             assert Path(stencil_init.dest).exists()
-    
+
         def it_creates_files(stencil_init):
             files = slurp(Path(stencil_init.dest))
             expected_files = {
                 ".stencil.toml": f'[stencil]\nversion = "1"\n\n[project]\nname = "my_project"\nsrc = "{STENCIL_PATH}"\n',
-                "README.md": "# my_project Documentation\n\nA\nB\nC",
-                "pyproject.toml": "[project]\nname = my_project",
-                ".github/CODEOWNERS": "* @all_the_engineers",
+                "README.md": "# my_project Documentation\n\nA\nB\nC\n",
+                "pyproject.toml": "[project]\nname = my_project\n",
+                ".github/CODEOWNERS": "* @all_the_engineers\n",
                 "my_project/__init__.py": "",
             }
             assert files == expected_files
@@ -171,7 +171,7 @@ def describe_stencil_lifecycle():
 
 #                def it_creates_directory(stencil):
 #                    assert Path(stencil.args[0]).exists()
-#        
+#
 #                def it_creates_files(stencil):
 #                    files = slurp(Path(stencil.args[0]))
 #                    expected_files = {
@@ -208,13 +208,13 @@ def describe_stencil_lifecycle():
             files = slurp(Path(stencil_init.dest))
             expected_files = {
                 ".stencil.toml": f'[stencil]\nversion = "1"\n\n[project]\nname = "my_project"\nsrc = "{STENCIL_PATH}"\n',
-                "README.md": "# my_project Documentation\n\nA\nX\nC",
-                "pyproject.toml": "[project]\nname = my_project",
-                ".github/CODEOWNERS": "* @all_the_engineers\n* @all_the_managers",
+                "README.md": "# my_project Documentation\n\nA\nX\nC\n",
+                "pyproject.toml": "[project]\nname = my_project\n",
+                ".github/CODEOWNERS": "* @all_the_engineers\n* @all_the_managers\n",
                 "my_project/__init__.py": "",
-                "my_project/__version__.py": '__version__ = "TODO: your version here"',
+                "my_project/__version__.py": '__version__ = "TODO: your version here"\n',
                 "tests/__init__.py": "",
-                "tests/test_example.py": "# some example tests\ndef test():\n    assert True"
+                "tests/test_example.py": "# some example tests\ndef test():\n    assert True\n"
             }
             assert files == expected_files
 #
@@ -235,7 +235,7 @@ def describe_stencil_lifecycle():
 #                    @pytest.fixture(scope="function")
 #                    def stencil(tmp_path):
 #                        yield Stencil("init", str(tmp_path / "output"), "./stencil1_src")
-#                
+#
 #                    def it_returns_success(stencil):
 #                        (stencil.result
 #                            .returncode(0)
@@ -243,7 +243,7 @@ def describe_stencil_lifecycle():
 #
 #                    def it_creates_directory(stencil):
 #                        assert Path(stencil.args[0]).exists()
-#                
+#
 #                    def it_creates_files(stencil):
 #                        files = slurp(Path(stencil.args[0]))
 #                        expected_files = {
@@ -251,7 +251,7 @@ def describe_stencil_lifecycle():
 #                            'stencil/README.md': '# my_project Documentation',
 #                            'stencil/pyproject.toml': '[project]\nname = my_project',
 #                            'stencil/.github/CODEOWNERS': '* @
-#    
+#
 
 def describe_github_stencil():
 
@@ -271,7 +271,7 @@ def describe_github_stencil():
 
         def it_creates_directory(stencil_init):
             assert Path(stencil_init.dest).exists()
-    
+
         def it_creates_files(stencil_init):
             files = slurp(Path(stencil_init.dest))
             expected_files = {
@@ -317,7 +317,7 @@ def describe_github_stencil_using_alternative_path():
 
         def it_creates_directory(stencil_init):
             assert Path(stencil_init.dest).exists()
-    
+
         def it_creates_files(stencil_init):
             files = slurp(Path(stencil_init.dest))
             expected_files = {
