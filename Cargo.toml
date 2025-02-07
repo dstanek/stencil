@@ -12,6 +12,7 @@ documentation = "https://github.com/dstanek/stencil"
 repository = "https://github.com/dstanek/stencil"
 authors = ["David Stanek <dstanek@dstanek.com"]
 license = "MIT"
+description = "Project templating engine"
 
 [workspace.dependencies]
 stencil-error = { path = "crates/stencil-error" }
@@ -22,3 +23,18 @@ serde_json = "1.0.138"
 thiserror = "1.0.65"
 toml = "0.8.19"
 ureq = { version = "3.0.4", features = ["json"] }
+
+# Config for 'dist'
+[workspace.metadata.dist]
+# The preferred dist version to use in CI (Cargo.toml SemVer syntax)
+cargo-dist-version = "0.28.0"
+# CI backends to support
+ci = "github"
+# The installers to generate for each app
+installers = ["shell", "powershell", "homebrew"]
+# Target platforms to build apps for (Rust target-triple syntax)
+targets = ["aarch64-apple-darwin", "aarch64-unknown-linux-gnu", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc"]
+# Path that installers should place binaries in
+install-path = "CARGO_HOME"
+# Whether to install an updater program
+install-updater = false
