@@ -24,6 +24,11 @@ thiserror = "1.0.65"
 toml = "0.8.19"
 ureq = { version = "3.0.4", features = ["json"] }
 
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
+
 # Config for 'dist'
 [workspace.metadata.dist]
 # The preferred dist version to use in CI (Cargo.toml SemVer syntax)
