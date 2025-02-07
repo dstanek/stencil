@@ -4,11 +4,9 @@ use std::collections::VecDeque;
 use std::env;
 
 use serde::Deserialize;
-use serde_json;
-use ureq;
 use ureq::Error;
 
-use super::model::{Directory, File, Renderable, RenderableIterator};
+use super::model::{Directory, File, Renderable};
 use stencil_error::StencilError;
 
 #[derive(Deserialize)]
@@ -81,17 +79,17 @@ impl GithubRepoIterator {
         owner: String,
         repo: String,
         path: String,
-    ) -> Result<Box<dyn RenderableIterator>, StencilError> {
+        //) -> Result<GithubRepoIterator, StencilError> {
+    ) -> Result<Self, StencilError> {
         let token = env::var("GITHUB_TOKEN").ok();
         let items = get_directory_contents(&owner, &repo, &path, token.as_deref()).unwrap();
-        let iterator = GithubRepoIterator {
+        Ok(GithubRepoIterator {
             owner,
             repo,
             path: path.clone(),
             token,
             queue: VecDeque::from(items),
-        };
-        Ok(Box::new(iterator))
+        })
     }
 }
 

@@ -174,9 +174,9 @@ fn init(show_diff: bool, dest: &PathBuf, src: &str) -> Result<(), StencilError> 
         .collect::<Vec<Renderable>>();
     // Show diff and apply the changes
     if show_diff {
-        diff::show_diff(&changes, &config, &dest)?;
+        diff::show_diff(&changes, &config, dest)?;
     }
-    apply_changes(&dest, &config)?;
+    apply_changes(dest, &config)?;
 
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
     output::write_bold(
@@ -187,22 +187,22 @@ fn init(show_diff: bool, dest: &PathBuf, src: &str) -> Result<(), StencilError> 
     Ok(())
 }
 
-fn plan(config: &TargetConfig, dest: &PathBuf) -> Result<(), StencilError> {
+fn plan(config: &TargetConfig, dest: &Path) -> Result<(), StencilError> {
     println!("Planning {} changes", dest.display());
-    let iterator = create_iterator(&config)?;
+    let iterator = create_iterator(config)?;
     let changes = iterator
         .map(|result| result.unwrap())
         .collect::<Vec<Renderable>>();
-    _show(&config);
-    diff::show_diff(&changes, &config, &dest)?;
+    _show(config);
+    diff::show_diff(&changes, config, dest)?;
     Ok(())
 }
 
 fn apply(
     config: &TargetConfig,
-    dest: &PathBuf,
+    dest: &Path,
     show_diff: bool,
-    auto_approve: bool,
+    _auto_approve: bool,
 ) -> Result<(), StencilError> {
     println!(
         "Applying changes from {} to {}",
@@ -210,16 +210,16 @@ fn apply(
         dest.display()
     );
     println!("Syncing {} from {}", dest.display(), config.project.src);
-    let iterator = create_iterator(&config)?;
+    let iterator = create_iterator(config)?;
     let changes = iterator
         .map(|result| result.unwrap())
         .collect::<Vec<Renderable>>();
     if show_diff {
-        diff::show_diff(&changes, &config, &dest)?;
+        diff::show_diff(&changes, config, dest)?;
     }
     // 1. display diff
     // 2. run apply
-    return apply_changes(dest, config);
+    apply_changes(dest, config)
 }
 
 fn _show(config: &TargetConfig) {
@@ -231,8 +231,8 @@ fn _show(config: &TargetConfig) {
 
 // An iterator that wraps FilesystemIterator and applies the rendering logic
 
-fn apply_changes(dest: &PathBuf, config: &TargetConfig) -> Result<(), StencilError> {
-    let iterator = create_iterator(&config)?;
+fn apply_changes(dest: &Path, config: &TargetConfig) -> Result<(), StencilError> {
+    let iterator = create_iterator(config)?;
     for entry in iterator {
         match entry {
             Ok(Renderable::Directory(dir)) => {
@@ -307,7 +307,7 @@ pub fn create_iterator(config: &TargetConfig) -> Result<RenderingIterator, Stenc
     //    std::process::exit(1);
     //}
     //};
-    let iterator = RenderingIterator::new(iterator, &config);
+    let iterator = RenderingIterator::new(iterator, config);
     Ok(iterator)
     //let mut ignore = Vec::new();
     // ignore.push(".gitignore".to_string());

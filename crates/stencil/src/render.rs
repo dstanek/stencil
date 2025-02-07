@@ -19,47 +19,47 @@ impl Iterator for RenderingIterator {
     type Item = Result<Renderable, StencilError>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        while self.index < self.renderables.len() {
-            let renderable = &self.renderables[self.index];
-            self.index += 1;
+        if self.index >= self.renderables.len() {
+            return None;
+        }
 
-            match renderable {
-                Renderable::File(file) => {
-                    let parser = ParserBuilder::with_stdlib().build().unwrap();
-                    let template = parser.parse(&file.relative_path).unwrap();
-                    let relative_path = template.render(&self.globals).unwrap();
-                    let mut xrelative_path = PathBuf::from(&file.relative_path);
+        let renderable = &self.renderables[self.index];
+        self.index += 1;
 
-                    if let Some(extention) = xrelative_path.extension() {
-                        if extention != "liquid" {
-                            return Some(Ok(Renderable::File(File {
-                                relative_path,
-                                content: file.content.clone(), // TODO: can i get rid of this clone?
-                            })));
-                        }
+        match renderable {
+            Renderable::File(file) => {
+                let parser = ParserBuilder::with_stdlib().build().unwrap();
+                let template = parser.parse(&file.relative_path).unwrap();
+                let relative_path = template.render(&self.globals).unwrap();
+                let mut xrelative_path = PathBuf::from(&file.relative_path);
+
+                if let Some(extention) = xrelative_path.extension() {
+                    if extention != "liquid" {
+                        return Some(Ok(Renderable::File(File {
+                            relative_path,
+                            content: file.content.clone(), // TODO: can i get rid of this clone?
+                        })));
                     }
-
-                    let template = parser.parse(file.content.as_str()).unwrap();
-                    let content = template.render(&self.globals).unwrap();
-
-                    xrelative_path.set_extension("");
-                    return Some(Ok(Renderable::File(File {
-                        relative_path: xrelative_path.to_string_lossy().into_owned(),
-                        content,
-                    })));
                 }
-                Renderable::Directory(directory) => {
-                    let parser = ParserBuilder::with_stdlib().build().unwrap();
-                    let template = parser.parse(&directory.relative_path).unwrap();
-                    let path = template.render(&self.globals).unwrap();
-                    let directory = Directory {
-                        relative_path: path,
-                    };
-                    return Some(Ok(Renderable::Directory(directory)));
-                }
+
+                let template = parser.parse(file.content.as_str()).unwrap();
+                let content = template.render(&self.globals).unwrap();
+
+                xrelative_path.set_extension("");
+                Some(Ok(Renderable::File(File {
+                    relative_path: xrelative_path.to_string_lossy().into_owned(),
+                    content,
+                })))
+            }
+            Renderable::Directory(directory) => {
+                let parser = ParserBuilder::with_stdlib().build().unwrap();
+                let template = parser.parse(&directory.relative_path).unwrap();
+                let path = template.render(&self.globals).unwrap();
+                Some(Ok(Renderable::Directory(Directory {
+                    relative_path: path,
+                })))
             }
         }
-        None
     }
 }
 

@@ -3,7 +3,7 @@
 use std::fs::{self, ReadDir};
 use std::path::PathBuf;
 
-use crate::model::{Directory, File, Renderable, RenderableIterator};
+use crate::model::{Directory, File, Renderable};
 use stencil_error::StencilError;
 
 pub struct FilesystemIterator {
@@ -12,13 +12,12 @@ pub struct FilesystemIterator {
 }
 
 impl FilesystemIterator {
-    pub fn new(root: &PathBuf) -> Result<Box<dyn RenderableIterator>, StencilError> {
+    pub fn new(root: &PathBuf) -> Result<Self, StencilError> {
         let stack = vec![fs::read_dir(root)?];
-        let iterator = FilesystemIterator {
+        Ok(FilesystemIterator {
             stack,
             root: root.clone(),
-        };
-        Ok(Box::new(iterator))
+        })
     }
 }
 

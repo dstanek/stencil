@@ -2,7 +2,7 @@
 
 use similar::{ChangeTag, TextDiff};
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::Path;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, StandardStreamLock, WriteColor};
 
 use crate::output::write;
@@ -12,8 +12,8 @@ use stencil_source::{Directory, File, Renderable};
 
 pub fn show_diff(
     changes: &Vec<Renderable>,
-    config: &TargetConfig,
-    dest: &PathBuf,
+    _config: &TargetConfig,
+    dest: &Path,
 ) -> Result<(), StencilError> {
     let stdout = StandardStream::stdout(ColorChoice::Always);
     let mut stdout_lock = stdout.lock();
@@ -30,11 +30,11 @@ pub fn show_diff(
                     true => File::from_path(file.relative_path.clone(), &orig_filename).unwrap(),
                     false => File::empty(),
                 };
-                show_file_diff(&mut stdout_lock, &orig_file, &file)?;
+                show_file_diff(&mut stdout_lock, &orig_file, file)?;
             }
             Renderable::Directory(dir) => {
                 if !dest.join(&dir.relative_path).exists() {
-                    show_directory_diff(&mut stdout_lock, &dir)?;
+                    show_directory_diff(&mut stdout_lock, dir)?;
                 };
             }
         }
@@ -75,17 +75,17 @@ fn show_file_diff(
         )?;
     }
     if new_content.is_empty() {
-        write!(&mut handle, "+++ new/{}    (new empty file)\n", new_path)?;
+        writeln!(&mut handle, "+++ new/{}    (new empty file)", new_path)?;
     } else {
-        write!(&mut handle, "+++ new/{}\n", new_path)?;
+        writeln!(&mut handle, "+++ new/{}", new_path)?;
     }
 
     // Iterate over the diff hunks
-    for (_, group) in diff.grouped_ops(3).iter().enumerate() {
+    for group in diff.grouped_ops(3).iter() {
         // Print hunk header
         let (old_start, old_end) = {
             let old_indices = group.iter().filter_map(|op| {
-                if op.old_range().len() > 0 {
+                if op.old_range().is_empty() {
                     Some(op.old_range().start + 1)
                 } else {
                     None
@@ -97,7 +97,7 @@ fn show_file_diff(
         };
         let (new_start, new_end) = {
             let new_indices = group.iter().filter_map(|op| {
-                if op.new_range().len() > 0 {
+                if op.new_range().is_empty() {
                     Some(op.new_range().start + 1)
                 } else {
                     None
@@ -109,9 +109,9 @@ fn show_file_diff(
         };
 
         handle.set_color(ColorSpec::new().set_fg(Some(Color::Cyan)))?;
-        write!(
+        writeln!(
             &mut handle,
-            "@@ -{},{} +{},{} @@\n",
+            "@@ -{},{} +{},{} @@",
             old_start,
             old_end - old_start + 1,
             new_start,
