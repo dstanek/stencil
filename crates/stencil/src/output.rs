@@ -4,9 +4,9 @@ use termcolor::{Color, ColorSpec, WriteColor};
 
 use stencil_error::StencilError;
 
-pub fn write(stream: &mut dyn WriteColor, color: Color, msg: String) -> Result<(), StencilError> {
+pub fn write(stream: &mut dyn WriteColor, color: Color, msg: &str) -> Result<(), StencilError> {
     stream.set_color(ColorSpec::new().set_fg(Some(color)))?;
-    write!(stream, "{}", msg)?;
+    write!(stream, "{msg}")?;
     stream.reset()?;
     Ok(())
 }
@@ -14,10 +14,10 @@ pub fn write(stream: &mut dyn WriteColor, color: Color, msg: String) -> Result<(
 pub fn write_bold(
     stream: &mut dyn WriteColor,
     color: Color,
-    msg: String,
+    msg: &str,
 ) -> Result<(), StencilError> {
     stream.set_color(ColorSpec::new().set_fg(Some(color)).set_bold(true))?;
-    write!(stream, "{}", msg)?;
+    write!(stream, "{msg}")?;
     stream.reset()?;
     Ok(())
 }

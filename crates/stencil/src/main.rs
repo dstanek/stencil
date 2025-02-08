@@ -82,7 +82,7 @@ fn main() {
     if let Err(err) = run() {
         // Write a colored error message to stderr
         let mut stderr = StandardStream::stderr(ColorChoice::Auto);
-        output::write_bold(&mut stderr, Color::Red, format!("Error: {}\n", err)).unwrap();
+        output::write_bold(&mut stderr, Color::Red, format!("Error: {err}\n").as_str()).unwrap();
 
         // Set a non-zero exit code
         std::process::exit(1);
@@ -94,7 +94,7 @@ fn run() -> Result<()> {
     match &cli.command {
         Some(Commands::Init(args)) => {
             let dest = PathBuf::from(&args.dest);
-            init(args.show_diff, &dest, &args.src)?
+            init(args.show_diff, &dest, &args.src)?;
         }
         Some(Commands::Plan(args)) => {
             let dest = match &args.dest {
@@ -107,7 +107,7 @@ fn run() -> Result<()> {
             match config.apply_overrides(cli.override_values) {
                 Ok(config) => config,
                 Err(e) => {
-                    eprintln!("Error: {}", e);
+                    eprintln!("Error: {e}");
                     std::process::exit(1);
                 }
             }
@@ -123,7 +123,7 @@ fn run() -> Result<()> {
             match config.apply_overrides(cli.override_values) {
                 Ok(config) => config,
                 Err(e) => {
-                    eprintln!("Error: {}", e);
+                    eprintln!("Error: {e}");
                     std::process::exit(1);
                 }
             }
@@ -166,7 +166,7 @@ fn init(show_diff: bool, dest: &PathBuf, src: &str) -> Result<(), StencilError> 
     };
     let mut config_path = PathBuf::from(dest);
     config_path.push(".stencil.toml");
-    config.save(&config_path, &config)?;
+    config.save(&config_path)?;
 
     let iterator = create_iterator(&config)?;
     let changes = iterator
@@ -182,7 +182,7 @@ fn init(show_diff: bool, dest: &PathBuf, src: &str) -> Result<(), StencilError> 
     output::write_bold(
         &mut stdout,
         Color::Green,
-        format!("Successfully initialized {}", dest.display()),
+        format!("Successfully initialized {}", dest.display()).as_str(),
     )?;
     Ok(())
 }
@@ -223,7 +223,7 @@ fn apply(
 }
 
 fn _show(config: &TargetConfig) {
-    println!("\nConfig: {:?}", config);
+    println!("\nConfig: {config:?}");
     println!("  Stencil:version : {:?}", config.stencil.version);
     println!("  Project:name: {:?}", config.project.name);
     println!("  Project:src: {:?}", config.project.src);
@@ -300,15 +300,8 @@ fn apply_changes(dest: &Path, config: &TargetConfig) -> Result<(), StencilError>
 
 pub fn create_iterator(config: &TargetConfig) -> Result<RenderingIterator, StencilError> {
     let iterator = renderables(&config.project.src)?;
-    //let iterator = match FilesystemCrawler::new(stencil_path.as_path()).crawl() {
-    //   Ok(iterator) => iterator,
-    //  Err(e) => {
-    //     eprintln!("Error: {}", e);
-    //    std::process::exit(1);
-    //}
-    //};
-    let iterator = RenderingIterator::new(iterator, config);
-    Ok(iterator)
+    Ok(RenderingIterator::new(iterator, config))
+
     //let mut ignore = Vec::new();
     // ignore.push(".gitignore".to_string());
     //ignore.push("README.md".to_string());

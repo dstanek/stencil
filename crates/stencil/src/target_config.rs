@@ -61,15 +61,15 @@ impl TargetConfig {
                 "stencil.version" => self.stencil.version = value,
                 "project.name" => self.project.name = value,
                 "project.src" => self.project.src = value,
-                _ => eprintln!("Unknown override key: {}", key),
+                _ => eprintln!("Unknown override key: {key}"),
             }
         }
 
         Ok(())
     }
 
-    pub fn save(&self, path: &PathBuf, config: &TargetConfig) -> Result<(), StencilError> {
-        let contents = match toml::to_string(config) {
+    pub fn save(&self, path: &PathBuf) -> Result<(), StencilError> {
+        let contents = match toml::to_string(self) {
             Ok(contents) => contents,
             Err(e) => return Err(StencilError::from(e)),
         };
@@ -77,17 +77,17 @@ impl TargetConfig {
         Ok(())
     }
 
-    pub fn load(path: &str) -> Result<TargetConfig, StencilError> {
+    pub fn load(path: &str) -> Result<Self, StencilError> {
         let contents = match fs::read_to_string(path) {
             Ok(contents) => contents,
             Err(e) => return Err(StencilError::from(e)),
         };
-        let config: TargetConfig = match toml::from_str(contents.as_str()) {
+        let config: Self = match toml::from_str(contents.as_str()) {
             Ok(config) => config,
             Err(e) => return Err(StencilError::from(e)),
         };
         match config.validate() {
-            Ok(_) => Ok(config),
+            Ok(()) => Ok(config),
             Err(e) => Err(e),
         }
     }

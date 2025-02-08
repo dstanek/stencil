@@ -26,9 +26,10 @@ pub fn show_diff(
         match entry {
             Renderable::File(file) => {
                 let orig_filename = dest.join(&file.relative_path);
-                let orig_file = match orig_filename.exists() {
-                    true => File::from_path(file.relative_path.clone(), &orig_filename).unwrap(),
-                    false => File::empty(),
+                let orig_file = if orig_filename.exists() {
+                    File::from_path(file.relative_path.clone(), &orig_filename).unwrap()
+                } else {
+                    File::empty()
                 };
                 show_file_diff(&mut stdout_lock, &orig_file, file)?;
             }
@@ -63,25 +64,29 @@ fn show_file_diff(
     write(
         &mut handle,
         Color::Yellow,
-        format!("diff --git a/{} b/{}\n", new_path, new_path),
+        format!("diff --git a/{new_path} b/{new_path}\n").as_str(),
     )?;
-    if old_path != "/dev/null" {
-        write(&mut handle, Color::Blue, format!("--- old/{}\n", old_path))?;
+    if old_path == "/dev/null" {
+        write(
+            &mut handle,
+            Color::Blue,
+            format!("--- old/{new_path}    (file not found)\n").as_str(),
+        )?;
     } else {
         write(
             &mut handle,
             Color::Blue,
-            format!("--- old/{}    (file not found)\n", new_path),
+            format!("--- old/{old_path}\n").as_str(),
         )?;
     }
     if new_content.is_empty() {
-        writeln!(&mut handle, "+++ new/{}    (new empty file)", new_path)?;
+        writeln!(&mut handle, "+++ new/{new_path}    (new empty file)")?;
     } else {
-        writeln!(&mut handle, "+++ new/{}", new_path)?;
+        writeln!(&mut handle, "+++ new/{new_path}")?;
     }
 
     // Iterate over the diff hunks
-    for group in diff.grouped_ops(3).iter() {
+    for group in &diff.grouped_ops(3) {
         // Print hunk header
         let (old_start, old_end) = {
             let old_indices = group.iter().filter_map(|op| {
@@ -128,7 +133,7 @@ fn show_file_diff(
                         write!(
                             &mut handle,
                             "-{:4} {}",
-                            change.old_index().map(|i| i + 1).unwrap_or(0),
+                            change.old_index().map_or(0, |i| i + 1),
                             change
                         )?;
                     }
@@ -137,7 +142,7 @@ fn show_file_diff(
                         write!(
                             &mut handle,
                             "+{:4} {}",
-                            change.new_index().map(|i| i + 1).unwrap_or(0),
+                            change.new_index().map_or(0, |i| i + 1),
                             change
                         )?;
                     }
@@ -146,7 +151,7 @@ fn show_file_diff(
                         write!(
                             &mut handle,
                             " {:4} {}",
-                            change.old_index().map(|i| i + 1).unwrap_or(0),
+                            change.old_index().map_or(0, |i| i + 1),
                             change
                         )?;
                     }
@@ -169,17 +174,18 @@ fn show_directory_diff(
         format!(
             "diff --git a/{} b/{}\n",
             dir.relative_path, dir.relative_path,
-        ),
+        )
+        .as_str(),
     )?;
     write(
         &mut handle,
         Color::Blue,
-        format!("--- old/{}    (directory not found)\n", dir.relative_path),
+        format!("--- old/{}    (directory not found)\n", dir.relative_path).as_str(),
     )?;
     write(
         &mut handle,
         Color::White,
-        format!("+++ new/{}    (new directory)\n\n", dir.relative_path),
+        format!("+++ new/{}    (new directory)\n\n", dir.relative_path).as_str(),
     )?;
     Ok(())
 }

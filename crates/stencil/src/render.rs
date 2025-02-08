@@ -10,9 +10,9 @@ use stencil_error::StencilError;
 use stencil_source::{Directory, File, Renderable};
 
 pub struct RenderingIterator {
-    pub renderables: Vec<Renderable>,
-    pub globals: Object,
-    pub index: usize,
+    renderables: Vec<Renderable>,
+    globals: Object,
+    index: usize,
 }
 
 impl Iterator for RenderingIterator {
@@ -26,9 +26,10 @@ impl Iterator for RenderingIterator {
         let renderable = &self.renderables[self.index];
         self.index += 1;
 
+        // TODO: get rid of the unwraps so that errors can be handled properly
+        let parser = ParserBuilder::with_stdlib().build().unwrap();
         match renderable {
             Renderable::File(file) => {
-                let parser = ParserBuilder::with_stdlib().build().unwrap();
                 let template = parser.parse(&file.relative_path).unwrap();
                 let relative_path = template.render(&self.globals).unwrap();
                 let mut xrelative_path = PathBuf::from(&file.relative_path);
@@ -52,7 +53,6 @@ impl Iterator for RenderingIterator {
                 })))
             }
             Renderable::Directory(directory) => {
-                let parser = ParserBuilder::with_stdlib().build().unwrap();
                 let template = parser.parse(&directory.relative_path).unwrap();
                 let path = template.render(&self.globals).unwrap();
                 Some(Ok(Renderable::Directory(Directory {
@@ -64,11 +64,11 @@ impl Iterator for RenderingIterator {
 }
 
 impl RenderingIterator {
-    pub fn new(renderables: Vec<Renderable>, config: &TargetConfig) -> RenderingIterator {
+    pub fn new(renderables: Vec<Renderable>, config: &TargetConfig) -> Self {
         let globals = object!({
             "project_name": config.project.name,
         });
-        RenderingIterator {
+        Self {
             renderables,
             globals,
             index: 0,
