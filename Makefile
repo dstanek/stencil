@@ -20,4 +20,25 @@ tests: $(TEST_IMAGE_DETAILS) stencil
 		-e GITHUB_TOKEN \
 		-v $(PWD)/tests/:/tests:Z \
 		-v $(PWD)/target/debug/:/stencil:Z \
-		$(TEST_IMAGE_NAME)
+		$(TEST_IMAGE_NAME) \
+		pytest tests.py -vv -m "not github"
+
+.PHONY: all-tests
+all-tests: $(TEST_IMAGE_DETAILS) stencil
+	@echo "Running al tests..."
+	@$(DOCKER) run --rm \
+		-e GITHUB_TOKEN \
+		-v $(PWD)/tests/:/tests:Z \
+		-v $(PWD)/target/debug/:/stencil:Z \
+		$(TEST_IMAGE_NAME) \
+		pytest tests.py -vv
+
+.PHONY: test-plan
+test-plan: $(TEST_IMAGE_DETAILS) stencil
+	@echo "Running test plan..."
+	@$(DOCKER) run --rm \
+		-e GITHUB_TOKEN \
+		-v $(PWD)/tests/:/tests:Z \
+		-v $(PWD)/target/debug/:/stencil:Z \
+		$(TEST_IMAGE_NAME) \
+		pytest tests.py --collect-only -vv
