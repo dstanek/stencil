@@ -15,19 +15,24 @@ class Result:
         return re.sub(r"\x1b\[[0-9;]*m", "", text)
 
     def returncode(self, code: int):
-        assert self._res.returncode == code
+        res = self._res
+        assert res.returncode == code, \
+            f"Expected {code}, got {res.returncode} (stderr: {res.stderr!r})"
         return self
 
     def stdout_contains(self, text: str):
-        assert text in self._strip_color_codes(self._res.stdout)
+        stdout = self._strip_color_codes(self._res.stdout)
+        assert text in stdout, f"Expected {text!r} to be in {stdout!r}"
         return self
 
     def not_stdout_contains(self, text: str):
-        assert text not in self._strip_color_codes(self._res.stdout)
+        stdout = self._strip_color_codes(self._res.stdout)
+        assert text not in stdout, f"Expected {text!r} to not be in {stdout!r}"
         return self
 
     def stderr_contains(self, text: str):
-        assert text in self._strip_color_codes(self._res.stderr)
+        stderr = self._strip_color_codes(self._res.stderr)
+        assert text in stderr, f"Expected {text!r} to be in {stderr!r}"
         return self
 
 
@@ -35,6 +40,7 @@ class Stencil:
     def __init__(self, cmd: str) -> None:
         self._cmd = cmd
         self._stencil_args: ArgList = []
+        self._command_args: ArgList = []
         self._dest: Path|None = None
         self._src: str|None = None
 
@@ -62,10 +68,15 @@ class Stencil:
         self._stencil_args.extend(["--override", f"{name}={value}"])
         return self
 
+    def arg(self, name: str, value: str) -> Self:
+        self._command_args.extend([name, value])
+        return self
+
     def run(self) -> Result:
         cmd = ["/stencil/stencil"]
         cmd.extend(self._stencil_args)
         cmd.append(self._cmd)
+        cmd.extend(self._command_args)
         if self._dest:
             cmd.append(f"{self._dest}")
         if self._src:

@@ -1,6 +1,6 @@
 // Copyright 2024-2025 David Stanek <dstanek@dstanek.com>
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fs;
 use std::path::PathBuf;
 
@@ -13,6 +13,7 @@ use stencil_error::StencilError;
 pub struct TargetConfig {
     pub stencil: ConfigStencil,
     pub project: ConfigProject,
+    pub arguments: BTreeMap<String, String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -61,7 +62,14 @@ impl TargetConfig {
                 "stencil.version" => self.stencil.version = value,
                 "project.name" => self.project.name = value,
                 "project.src" => self.project.src = value,
-                _ => eprintln!("Unknown override key: {key}"),
+                _ => {
+                    if key.starts_with("arguments.") {
+                        let arg_key = key.trim_start_matches("arguments.").to_string();
+                        self.arguments.insert(arg_key, value);
+                    } else {
+                        eprintln!("Unknown override key: {key}");
+                    }
+                }
             }
         }
 

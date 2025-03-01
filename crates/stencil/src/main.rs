@@ -1,5 +1,6 @@
 // Copyright 2024-2025 David Stanek <dstanek@dstanek.com>
 
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -51,8 +52,21 @@ struct InitArgs {
     #[arg(help = "Stencil source (file:// or github://owner/repo)")]
     src: String,
 
-    #[arg(long = "no-diff", help = "Disable diff output", action = clap::ArgAction::SetFalse)]
+    #[arg(
+        long = "no-diff",
+        help = "Disable diff output",
+        action = clap::ArgAction::SetFalse
+    )]
     show_diff: bool,
+
+    #[arg(
+        short = 'a',
+        long = "argument",
+        help = "Argument to pass to the template",
+        value_parser = parse_key_value,
+        value_name = "KEY=VALUE",
+    )]
+    arguments: Vec<(String, String)>,
 }
 
 #[derive(Parser)]
@@ -94,7 +108,7 @@ fn run() -> Result<()> {
     match &cli.command {
         Some(Commands::Init(args)) => {
             let dest = PathBuf::from(&args.dest);
-            init(args.show_diff, &dest, &args.src)?;
+            init(args.show_diff, &dest, &args.src, args)?;
         }
         Some(Commands::Plan(args)) => {
             let dest = match &args.dest {
@@ -139,7 +153,7 @@ fn run() -> Result<()> {
     Ok(())
 }
 
-fn init(show_diff: bool, dest: &PathBuf, src: &str) -> Result<(), StencilError> {
+fn init(show_diff: bool, dest: &PathBuf, src: &str, args: &InitArgs) -> Result<(), StencilError> {
     println!("Initializing {}", dest.display());
 
     // Fail if the dest already exists
@@ -155,6 +169,11 @@ fn init(show_diff: bool, dest: &PathBuf, src: &str) -> Result<(), StencilError> 
     // TODO: ask questions from the source config
 
     // Create the initial config file
+    let mut arguments = BTreeMap::new();
+    for (key, value) in &args.arguments {
+        arguments.insert(key.clone(), value.clone());
+    }
+
     let config = TargetConfig {
         stencil: target_config::ConfigStencil {
             version: "1".to_string(),
@@ -163,6 +182,7 @@ fn init(show_diff: bool, dest: &PathBuf, src: &str) -> Result<(), StencilError> 
             name: "my_project".to_string(),
             src: src.to_string(),
         },
+        arguments,
     };
     let mut config_path = PathBuf::from(dest);
     config_path.push(".stencil.toml");
@@ -329,3 +349,49 @@ pub fn create_iterator(config: &TargetConfig) -> Result<RenderingIterator, Stenc
 //        .collect();
 //    d
 //}
+
+// TODO: add proper errors here
+fn parse_key_value(s: &str) -> Result<(String, String), String> {
+    let parts: Vec<&str> = s.splitn(2, '=').collect();
+    match (parts.first(), parts.get(1)) {
+        (Some(&key), Some(&value)) => {
+            let value = value.trim_matches('"');
+            if key.is_empty() {
+                Err("Empty key is not allowed".to_string())
+            } else {
+                Ok((key.to_string(), value.to_string()))
+            }
+        }
+        _ => Err(format!(
+            "Invalid argument format: '{}'. Expected format: key=value",
+            s
+        )),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_key_value() {
+        assert_eq!(
+            parse_key_value("key=value").unwrap(),
+            ("key".to_string(), "value".to_string())
+        );
+        assert_eq!(
+            parse_key_value("key=\"a value\"").unwrap(),
+            ("key".to_string(), "a value".to_string())
+        );
+        assert_eq!(
+            parse_key_value("key=").unwrap(),
+            ("key".to_string(), "".to_string())
+        );
+        assert_eq!(
+            parse_key_value("key=\"\"").unwrap(),
+            ("key".to_string(), "".to_string())
+        );
+        assert!(parse_key_value("=value").is_err());
+        assert!(parse_key_value("").is_err());
+    }
+}

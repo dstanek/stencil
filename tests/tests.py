@@ -1,4 +1,5 @@
 from pathlib import Path
+from textwrap import dedent
 
 import pytest
 
@@ -27,6 +28,55 @@ def describe_stencil_init():
 
     # TODO: def describe_when_target_directory_is_unwritalble():
 
+    def describe_when_providing_arguments():
+
+        STENCIL_PATH = "./complete-stencil/stencil"
+        PROJECT_NAME = "my_project"
+
+        @pytest.fixture(scope="module")
+        def stencil_init(tmp_path_factory):
+            tmp_path = tmp_path_factory.mktemp("output") / "output"
+            yield (Stencil.init()
+                .arg("-a", "arg0=0")
+                .arg("--argument", "arg1=one")
+                .arg("-a", "arg2=\"zero one two\"")
+                .dest(tmp_path)
+                .src(STENCIL_PATH)
+                .run())
+
+        def it_succeeds(stencil_init):
+            (stencil_init
+                .returncode(0)
+                .stdout_contains(f"Successfully initialized {stencil_init.dest}"))
+
+        def it_creates_files(stencil_init):
+            files = slurp(stencil_init.dest)
+            expected_files = {
+                ".stencil.toml": dedent(f"""\
+                    [stencil]
+                    version = "1"
+
+                    [project]
+                    name = "{PROJECT_NAME}"
+                    src = "{STENCIL_PATH}"
+
+                    [arguments]
+                    arg0 = "0"
+                    arg1 = "one"
+                    arg2 = "zero one two"
+                """),
+                "README.md": f"# {PROJECT_NAME} Documentation\n\nA\nB\nC\n",
+                "pyproject.toml": f"[project]\nname = {PROJECT_NAME}\n",
+                ".github/CODEOWNERS": "* @all_the_engineers\n",
+                "my_project/__init__.py": dedent("""\
+                    # show the arguments here
+                    arg0 = 0
+                    arg1 = "one"
+                    arg2 = "zero one two"
+                """),
+            }
+            assert files == expected_files
+
 
 def describe_stencil_lifecycle():
 
@@ -54,7 +104,7 @@ def describe_stencil_lifecycle():
         def it_creates_files(stencil_init):
             files = slurp(stencil_init.dest)
             expected_files = {
-                ".stencil.toml": f'[stencil]\nversion = "1"\n\n[project]\nname = "my_project"\nsrc = "{STENCIL_PATH}"\n',
+                ".stencil.toml": f'[stencil]\nversion = "1"\n\n[project]\nname = "my_project"\nsrc = "{STENCIL_PATH}"\n\n[arguments]\n',
                 "README.md": "# my_project Documentation\n\nA\nB\nC\n",
                 "pyproject.toml": "[project]\nname = my_project\n",
                 ".github/CODEOWNERS": "* @all_the_engineers\n",
@@ -139,7 +189,7 @@ def describe_stencil_lifecycle():
         def it_creates_and_updates_files(stencil_init):
             files = slurp(Path(stencil_init.dest))
             expected_files = {
-                ".stencil.toml": f'[stencil]\nversion = "1"\n\n[project]\nname = "my_project"\nsrc = "{STENCIL_PATH}"\n',
+                ".stencil.toml": f'[stencil]\nversion = "1"\n\n[project]\nname = "my_project"\nsrc = "{STENCIL_PATH}"\n\n[arguments]\n',
                 "README.md": "# my_project Documentation\n\nA\nX\nC\n",
                 "pyproject.toml": "[project]\nname = my_project\n",
                 ".github/CODEOWNERS": "* @all_the_engineers\n* @all_the_managers\n",
@@ -178,7 +228,7 @@ def describe_github_stencil():
             files = slurp(stencil_init.dest)
             expected_files = {
                 ".github/CODEOWNERS": "* @all_the_engineers\n* @all_the_managers",
-                ".stencil.toml": f'[stencil]\nversion = "1"\n\n[project]\nname = "my_project"\nsrc = "{STENCIL_PATH}"\n',
+                ".stencil.toml": f'[stencil]\nversion = "1"\n\n[project]\nname = "my_project"\nsrc = "{STENCIL_PATH}"\n\n[arguments]\n',
                 "README.md": "# my_project Documentation\n\nX\nY\nZ\n",
                 "pyproject.toml": "[project]\nname = my_project",
                 "my_project/__init__.py": "",
@@ -228,7 +278,7 @@ def describe_github_stencil_using_alternative_path():
             files = slurp(stencil_init.dest)
             expected_files = {
                 ".github/CODEOWNERS": "* @all_the_engineers\n* @all_the_managers",
-                ".stencil.toml": f'[stencil]\nversion = "1"\n\n[project]\nname = "my_project"\nsrc = "{STENCIL_PATH}"\n',
+                ".stencil.toml": f'[stencil]\nversion = "1"\n\n[project]\nname = "my_project"\nsrc = "{STENCIL_PATH}"\n\n[arguments]\n',
                 "README.md": "# my_project Other Documentation\n\nA\nB\nC\n",
                 "pyproject.toml": "[project]\nname = my_project",
                 "my_project-other/__init__.py": "",
