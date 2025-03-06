@@ -1,5 +1,6 @@
 [package]
 name = "stencil-rendering"
+description = "Common template rendering code"
 version = "0.0.1"
 edition = { workspace = true }
 rust-version = { workspace = true }
@@ -8,6 +9,9 @@ documentation = { workspace = true }
 repository = { workspace = true }
 authors = { workspace = true }
 license = { workspace = true }
+keywords = { workspace = true }
+categories = { workspace = true }
+readme = { workspace = true }
 
 [dependencies]
 minijinja = { workspace = true }

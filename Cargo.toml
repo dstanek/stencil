@@ -10,9 +10,12 @@ rust-version = "1.83"
 homepage = "https://github.com/dstanek/stencil"
 documentation = "https://github.com/dstanek/stencil"
 repository = "https://github.com/dstanek/stencil"
-authors = ["David Stanek <dstanek@dstanek.com"]
+authors = ["David Stanek <dstanek@dstanek.com>"]
 license = "MIT"
 description = "Project templating engine"
+keywords = ["template", "scaffolding", "project-generator", "boilerplate", "stencil", "project-maintenance"]
+categories = ["development-tools::build-utils", "command-line-utilities"]
+readme = "README.md"
 
 [workspace.dependencies]
 stencil-error = { path = "crates/stencil-error" }
