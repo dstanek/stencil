@@ -1,5 +1,12 @@
 // Copyright 2024-2025 David Stanek <dstanek@dstanek.com>
 
+#![warn(
+    clippy::all,
+//    clippy::restriction,
+    clippy::pedantic,
+    clippy::cargo
+)]
+
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
