@@ -81,9 +81,6 @@ class Stencil:
             cmd.append(f"{self._dest}")
         if self._src:
             cmd.append(self._src)
-        with open("/tests/ou.txt", "a") as f:
-            f.write(f"CMD: {cmd}\n")
-        print("CMD", cmd)
         return Result(self._dest, run(cmd, capture_output=True, text=True))
 
 
