@@ -220,7 +220,7 @@ fn plan(config: &TargetConfig, dest: &Path) -> Result<(), StencilError> {
     let changes = iterator
         .map(|result| result.unwrap())
         .collect::<Vec<Renderable>>();
-    _show(config);
+    show(config);
     diff::show_diff(&changes, config, dest)?;
     Ok(())
 }
@@ -249,7 +249,7 @@ fn apply(
     apply_changes(dest, config)
 }
 
-fn _show(config: &TargetConfig) {
+fn show(config: &TargetConfig) {
     println!("\nConfig: {config:?}");
     println!("  Stencil:version : {:?}", config.stencil.version);
     println!("  Project:name: {:?}", config.project.name);
