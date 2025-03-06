@@ -22,6 +22,7 @@ tests: $(TEST_IMAGE_DETAILS) stencil
 		-v $(PWD)/target/debug/:/stencil:Z \
 		$(TEST_IMAGE_NAME) \
 		pytest tests.py -vv -m "not github"
+	cargo test
 
 .PHONY: all-tests
 all-tests: $(TEST_IMAGE_DETAILS) stencil

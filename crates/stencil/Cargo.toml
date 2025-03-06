@@ -13,6 +13,7 @@ default-run = "stencil"
 
 [dependencies]
 stencil-error = { workspace = true }
+stencil-rendering = { workspace = true }
 stencil-source = { workspace = true }
 
 serde = { workspace = true }

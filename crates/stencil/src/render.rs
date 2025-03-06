@@ -1,17 +1,26 @@
 // Copyright 2024-2025 David Stanek <dstanek@dstanek.com>
 
+use std::collections::HashMap;
 use std::path::PathBuf;
-
-use liquid::ParserBuilder;
-use liquid::{object, Object};
 
 use crate::target_config::TargetConfig;
 use stencil_error::StencilError;
+use stencil_rendering::Renderable as RenderableTrait;
+use stencil_rendering::{render, render_str, TemplateVar};
 use stencil_source::{Directory, File, Renderable};
+
+struct RenderableFile<'a>(&'a File);
+
+#[allow(clippy::needless_lifetimes)]
+impl<'a> RenderableTrait for RenderableFile<'a> {
+    fn content(&self) -> &str {
+        &self.0.content
+    }
+}
 
 pub struct RenderingIterator {
     renderables: Vec<Renderable>,
-    globals: Object,
+    variables: HashMap<String, TemplateVar>,
     index: usize,
 }
 
@@ -26,24 +35,20 @@ impl Iterator for RenderingIterator {
         let renderable = &self.renderables[self.index];
         self.index += 1;
 
-        // TODO: get rid of the unwraps so that errors can be handled properly
-        let parser = ParserBuilder::with_stdlib().build().unwrap();
         match renderable {
             Renderable::File(file) => {
-                let path_template = parser.parse(&file.relative_path).unwrap();
-                let mut dest_path = PathBuf::from(path_template.render(&self.globals).unwrap());
+                let mut dest_path =
+                    PathBuf::from(render_str(&file.relative_path, &self.variables).unwrap()); // TODO: catch bad rendering (etc...missing variable)
 
-                if let Some(extention) = dest_path.extension() {
-                    if extention != "liquid" {
-                        return Some(Ok(Renderable::File(File {
-                            relative_path: dest_path.to_string_lossy().to_string(),
-                            content: file.content.clone(), // TODO: can i get rid of this clone?
-                        })));
-                    }
+                if dest_path.extension().map_or(true, |ext| ext != "jinja") {
+                    return Some(Ok(Renderable::File(File {
+                        relative_path: dest_path.to_string_lossy().to_string(),
+                        content: file.content.clone(),
+                    })));
                 }
 
-                let template = parser.parse(file.content.as_str()).unwrap();
-                let content = template.render(&self.globals).unwrap(); // TODO: catch bad rendering (etc...missing variable)
+                let rf = RenderableFile(file);
+                let content = render(&rf, &rf, &self.variables).unwrap();
 
                 dest_path.set_extension("");
                 Some(Ok(Renderable::File(File {
@@ -52,10 +57,8 @@ impl Iterator for RenderingIterator {
                 })))
             }
             Renderable::Directory(directory) => {
-                let template = parser.parse(&directory.relative_path).unwrap();
-                let path = template.render(&self.globals).unwrap();
                 Some(Ok(Renderable::Directory(Directory {
-                    relative_path: path,
+                    relative_path: render_str(&directory.relative_path, &self.variables).unwrap(), // TODO: catch bad rendering (etc...missing variable)
                 })))
             }
         }
@@ -64,20 +67,18 @@ impl Iterator for RenderingIterator {
 
 impl RenderingIterator {
     pub fn new(renderables: Vec<Renderable>, config: &TargetConfig) -> Self {
-        let mut globals = object!({
-            "project_name": config.project.name,
-        });
+        let mut variables = HashMap::from([(
+            "project_name".to_string(),
+            TemplateVar::from(config.project.name.clone()),
+        )]);
 
         for (key, value) in &config.arguments {
-            globals.insert(
-                key.clone().into(),
-                liquid::model::Value::scalar(value.clone()),
-            );
+            variables.insert(key.clone(), TemplateVar::from(value.clone()));
         }
 
         Self {
             renderables,
-            globals,
+            variables,
             index: 0,
         }
     }
