@@ -1,3 +1,5 @@
+// Copyright (c) 2025 David Stanek <dstanek@dstanek.com>
+
 mod file;
 use std::collections::HashMap;
 

@@ -1,3 +1,5 @@
+// Copyright (c) 2025 David Stanek <dstanek@dstanek.com>
+
 use regex::Regex;
 use std::collections::HashMap;
 

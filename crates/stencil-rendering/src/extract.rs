@@ -1,3 +1,5 @@
+// Copyright (c) 2025 David Stanek <dstanek@dstanek.com>
+
 use core::fmt;
 use std::collections::HashMap;
 use std::error::Error;

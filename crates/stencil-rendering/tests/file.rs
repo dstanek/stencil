@@ -1,3 +1,5 @@
+// Copyright (c) 2025 David Stanek <dstanek@dstanek.com>
+
 use stencil_rendering::Renderable;
 
 pub struct File {

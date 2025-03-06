@@ -1,3 +1,5 @@
+// Copyright (c) 2025 David Stanek <dstanek@dstanek.com>
+
 /// Define an enum that represents the possible value types for templates
 #[derive(Debug, Clone)]
 pub enum TemplateVar {

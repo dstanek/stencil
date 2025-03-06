@@ -1,3 +1,5 @@
+# Copyright (c) 2024-2025 David Stanek <dstanek@dstanek.com>
+
 from pathlib import Path
 from textwrap import dedent
 

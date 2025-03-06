@@ -1,4 +1,4 @@
-// Copyright 2024-2025 David Stanek <dstanek@dstanek.com>
+// Copyright (c) 2024-2025 David Stanek <dstanek@dstanek.com>
 
 use std::convert::From;
 use std::io;
