@@ -14,8 +14,7 @@ categories = { workspace = true }
 readme = { workspace = true }
 
 [dependencies]
-stencil-error = { workspace = true }
-
 serde = { workspace = true }
 serde_json = { workspace = true }
+stencil-error = { workspace = true }
 ureq = { workspace = true }
