@@ -12,23 +12,26 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
       - name: Determine version bump from Conventional Commits
         id: semver
-        uses: wagoid/action-semver@v2
-        with:
-          # If needed, adjust options to control which commit range to analyze.
-          # For example, you might specify a tag or the path of your Cargo.toml.
-          tag-prefix: ""
-          path: "crates/stencil/Cargo.toml"
+        run: |
+          npm install -g @semantic-release/commit-analyzer
+          bump=$(npx @semantic-release/commit-analyzer --preset angular)
+          echo "bump=$bump" >> $GITHUB_OUTPUT
 
       - name: Display bump type
-        run: 'echo "Determined bump type: ${{ steps.semver.outputs.bump_type }}"'
+        run: 'echo "Determined bump type: ${{ steps.semver.outputs.bump }}"'
 
       - name: Install cargo-release
         run: cargo install cargo-release
 
       - name: Run cargo-release with semantic bump
-        run: cargo release ${{ steps.semver.outputs.bump_type }} --no-confirm
+        run: cargo release ${{ steps.semver.outputs.bump }} --no-confirm
         env:
           # Disable publishing if not needed; adjust according to your release process.
           CARGO_RELEASE_PUBLISH: "false"
