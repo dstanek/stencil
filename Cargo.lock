@@ -727,7 +727,7 @@ dependencies = [
 
 [[package]]
 name = "stencil-error"
-version = "0.0.1"
+version = "0.2.0"
 dependencies = [
  "thiserror",
  "toml",
@@ -735,7 +735,7 @@ dependencies = [
 
 [[package]]
 name = "stencil-rendering"
-version = "0.0.1"
+version = "0.2.0"
 dependencies = [
  "minijinja",
  "regex",
@@ -745,7 +745,7 @@ dependencies = [
 
 [[package]]
 name = "stencil-source"
-version = "0.0.1"
+version = "0.2.0"
 dependencies = [
  "serde",
  "serde_json",

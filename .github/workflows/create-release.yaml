@@ -4,34 +4,100 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Needed to push commits and tags
+      issues: read    # Needed to read PR labels
+      pull-requests: read
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          node-version: '22'
+          fetch-depth: 0 # Required to get all tags
 
-      - name: Determine version bump from Conventional Commits
-        id: semver
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-release and git-cliff
         run: |
-          npm install -g @semantic-release/commit-analyzer
-          bump=$(npx @semantic-release/commit-analyzer --preset angular)
-          echo "bump=$bump" >> $GITHUB_OUTPUT
+          cargo install cargo-release
+          cargo install git-cliff
 
-      - name: Display bump type
-        run: 'echo "Determined bump type: ${{ steps.semver.outputs.bump }}"'
+      - name: Get Last Version
+        id: last_version
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
+          echo "LAST_TAG=$LAST_TAG" >> $GITHUB_ENV
+          echo "Last version: $LAST_TAG"
 
-      - name: Install cargo-release
-        run: cargo install cargo-release
+      - name: Determine Next Version
+        id: next_version
+        run: |
+          LAST_TAG=${{ env.LAST_TAG }}
+          LABELS="${{ steps.get_labels.outputs.labels }}"
+          NEXT_BUMP="patch"
 
-      - name: Run cargo-release with semantic bump
-        run: cargo release ${{ steps.semver.outputs.bump }} --no-confirm
-        env:
-          # Disable publishing if not needed; adjust according to your release process.
-          CARGO_RELEASE_PUBLISH: "false"
+          # Determine version bump from the commit messages
+          CHANGES=$(git log "$LAST_TAG"..HEAD --pretty=format:"%s")
+          if echo "$CHANGES" | grep -qE "^(feat|feature):"; then
+            NEXT_BUMP="minor"
+          elif echo "$CHANGES" | grep -qE "^(BREAKING CHANGE|breaking):"; then
+            NEXT_BUMP="major"
+          fi
+          echo "NEXT_BUMP=$NEXT_BUMP"
+
+          # Override using labels
+          if echo "$LABELS" | grep -q "minor"; then
+            NEXT_BUMP="minor"
+          elif echo "$LABELS" | grep -q "major"; then
+            NEXT_BUMP="major"
+          fi
+
+          NEXT_VERSION=$(cargo release version $NEXT_BUMP --workspace --no-confirm)
+          echo "NEXT_VERSION=$NEXT_VERSION" >> $GITHUB_ENV
+          echo "Next version: $NEXT_VERSION"
+
+      - name: Generate Changelog using git-cliff
+        run: |
+          git-cliff --tag v${{ env.NEXT_VERSION }} -o CHANGELOG.md
+          cat CHANGELOG.md
+
+      - name: Commit Changelog Before Releasing
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add CHANGELOG.md
+          git commit -m "chore: update changelog for v${{ env.NEXT_VERSION }}"
+
+      - name: Run Cargo Release
+        run: cargo release ${{ env.NEXT_VERSION }} --workspace --no-confirm --execute
+
+      - name: Push Release Commit and Tag
+        run: git push origin main --follow-tags
+
+#      - name: Generate Changelog from Commits
+#        id: changelog
+#        run: |
+#          LAST_TAG=${{ env.LAST_TAG }}
+#          NEXT_VERSION=${{ env.NEXT_VERSION }}
+#
+#          echo "## Changes in v$NEXT_VERSION" > changelog.txt
+#          echo "" >> changelog.txt
+#          git log "$LAST_TAG"..HEAD --pretty=format:"- %s" >> changelog.txt
+#          echo "" >> changelog.txt
+#
+#          cat changelog.txt
+#          echo "CHANGELOG<<EOF" >> $GITHUB_ENV
+#          cat changelog.txt >> $GITHUB_ENV
+#          echo "EOF" >> $GITHUB_ENV
+
+      - name: Upload Changelog as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Changelog
+          path: CHANGELOG.md
