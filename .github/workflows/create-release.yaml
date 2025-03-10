@@ -24,7 +24,7 @@ jobs:
           echo "bump=$(npx @semantic-release/commit-analyzer --preset angular)" >> $GITHUB_OUTPUT
 
       - name: Display bump type
-        run: echo "Determined bump type: ${{ steps.semver.outputs.bump }}"
+        run: "echo Determined bump type: ${{ steps.semver.outputs.bump }}"
 
       - name: Install cargo-release
         run: cargo install cargo-release
