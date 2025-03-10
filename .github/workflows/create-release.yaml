@@ -21,8 +21,7 @@ jobs:
         id: semver
         run: |
           npm install -g @semantic-release/commit-analyzer
-          bump=$(npx @semantic-release/commit-analyzer --preset angular)
-          echo "bump=$bump" >> $GITHUB_OUTPUT
+          echo "bump=$(npx @semantic-release/commit-analyzer --preset angular)" >> $GITHUB_OUTPUT
 
       - name: Display bump type
         run: 'echo "Determined bump type: ${{ steps.semver.outputs.bump }}"'
