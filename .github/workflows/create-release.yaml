@@ -4,12 +4,13 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   release:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Needed for pushing commits and tags
+      contents: write  # Needed to push commits and tags
       issues: read    # Needed to read PR labels
       pull-requests: read
 
@@ -22,8 +23,10 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install cargo-release
-        run: cargo install cargo-release
+      - name: Install cargo-release and git-cliff
+        run: |
+          cargo install cargo-release
+          cargo install git-cliff
 
       - name: Get Last Version
         id: last_version
@@ -32,56 +35,70 @@ jobs:
           echo "LAST_TAG=$LAST_TAG" >> $GITHUB_ENV
           echo "Last version: $LAST_TAG"
 
-      - name: Determine Next Version from Commit Messages
+      - name: Determine Next Version
         id: next_version
         run: |
           LAST_TAG=${{ env.LAST_TAG }}
+          LABELS="${{ steps.get_labels.outputs.labels }}"
+          NEXT_BUMP="patch"
 
-          # Get commit messages between last tag and HEAD
+          # Determine version bump from the commit messages
           CHANGES=$(git log "$LAST_TAG"..HEAD --pretty=format:"%s")
-
-          # Determine version bump
           if echo "$CHANGES" | grep -qE "^(feat|feature):"; then
+            NEXT_BUMP="minor"
             NEXT_VERSION=$(cargo release version minor --no-confirm)
           elif echo "$CHANGES" | grep -qE "^(BREAKING CHANGE|breaking):"; then
+            NEXT_BUMP="major"
             NEXT_VERSION=$(cargo release version major --no-confirm)
-          else
-            NEXT_VERSION=$(cargo release version patch --no-confirm)
           fi
 
+          # Override using labels
+          if echo "$LABELS" | grep -q "minor"; then
+            NEXT_BUMP="minor"
+          elif echo "$LABELS" | grep -q "major"; then
+            NEXT_BUMP="major"
+          fi
+
+          NEXT_VERSION=$(cargo release version $NEXT_BUMP --workspace --no-confirm)
           echo "NEXT_VERSION=$NEXT_VERSION" >> $GITHUB_ENV
           echo "Next version: $NEXT_VERSION"
+
+      - name: Generate Changelog using git-cliff
+        run: |
+          git-cliff --tag v${{ env.NEXT_VERSION }} -o CHANGELOG.md
+          cat CHANGELOG.md
+
+      - name: Commit Changelog Before Releasing
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add CHANGELOG.md
+          git commit -m "chore: update changelog for v${{ env.NEXT_VERSION }}"
 
       - name: Run Cargo Release
         run: cargo release ${{ env.NEXT_VERSION }} --workspace --no-confirm --execute
 
       - name: Push Release Commit and Tag
-        run: |
-          git push origin main --follow-tags
+        run: git push origin main --follow-tags
 
-      - name: Generate Changelog from Commits
-        id: changelog
-        run: |
-          LAST_TAG=${{ env.LAST_TAG }}
-          NEXT_VERSION=${{ env.NEXT_VERSION }}
+#      - name: Generate Changelog from Commits
+#        id: changelog
+#        run: |
+#          LAST_TAG=${{ env.LAST_TAG }}
+#          NEXT_VERSION=${{ env.NEXT_VERSION }}
+#
+#          echo "## Changes in v$NEXT_VERSION" > changelog.txt
+#          echo "" >> changelog.txt
+#          git log "$LAST_TAG"..HEAD --pretty=format:"- %s" >> changelog.txt
+#          echo "" >> changelog.txt
+#
+#          cat changelog.txt
+#          echo "CHANGELOG<<EOF" >> $GITHUB_ENV
+#          cat changelog.txt >> $GITHUB_ENV
+#          echo "EOF" >> $GITHUB_ENV
 
-          echo "## Changes in v$NEXT_VERSION" > changelog.txt
-          echo "" >> changelog.txt
-          git log "$LAST_TAG"..HEAD --pretty=format:"- %s" >> changelog.txt
-          echo "" >> changelog.txt
-
-          cat changelog.txt
-          echo "CHANGELOG<<EOF" >> $GITHUB_ENV
-          cat changelog.txt >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+      - name: Upload Changelog as Artifact
+        uses: actions/upload-artifact@v3
         with:
-          tag_name: "v${{ env.NEXT_VERSION }}"
-          name: "Release v${{ env.NEXT_VERSION }}"
-          body: "${{ env.CHANGELOG }}"
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: Changelog
+          path: CHANGELOG.md
