@@ -8,29 +8,80 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Needed for pushing commits and tags
+      issues: read    # Needed to read PR labels
+      pull-requests: read
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          node-version: '22'
+          fetch-depth: 0 # Required to get all tags
 
-      - name: Determine version bump from Conventional Commits
-        id: semver
-        run: |
-          npm install -g @semantic-release/commit-analyzer
-          echo "bump=$(npx @semantic-release/commit-analyzer --preset angular)" >> $GITHUB_OUTPUT
-
-      - name: Display bump type
-        run: "echo Determined bump type: ${{ steps.semver.outputs.bump }}"
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Install cargo-release
         run: cargo install cargo-release
 
-      - name: Run cargo-release with semantic bump
-        run: cargo release ${{ steps.semver.outputs.bump }} --no-confirm
+      - name: Get Last Version
+        id: last_version
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
+          echo "LAST_TAG=$LAST_TAG" >> $GITHUB_ENV
+          echo "Last version: $LAST_TAG"
+
+      - name: Determine Next Version from Commit Messages
+        id: next_version
+        run: |
+          LAST_TAG=${{ env.LAST_TAG }}
+
+          # Get commit messages between last tag and HEAD
+          CHANGES=$(git log "$LAST_TAG"..HEAD --pretty=format:"%s")
+
+          # Determine version bump
+          if echo "$CHANGES" | grep -qE "^(feat|feature):"; then
+            NEXT_VERSION=$(cargo release version minor --no-confirm)
+          elif echo "$CHANGES" | grep -qE "^(BREAKING CHANGE|breaking):"; then
+            NEXT_VERSION=$(cargo release version major --no-confirm)
+          else
+            NEXT_VERSION=$(cargo release version patch --no-confirm)
+          fi
+
+          echo "NEXT_VERSION=$NEXT_VERSION" >> $GITHUB_ENV
+          echo "Next version: $NEXT_VERSION"
+
+      - name: Run Cargo Release
+        run: cargo release ${{ env.NEXT_VERSION }} --no-confirm --execute
+
+      - name: Push Release Commit and Tag
+        run: |
+          git push origin main --follow-tags
+
+      - name: Generate Changelog from Commits
+        id: changelog
+        run: |
+          LAST_TAG=${{ env.LAST_TAG }}
+          NEXT_VERSION=${{ env.NEXT_VERSION }}
+
+          echo "## Changes in v$NEXT_VERSION" > changelog.txt
+          echo "" >> changelog.txt
+          git log "$LAST_TAG"..HEAD --pretty=format:"- %s" >> changelog.txt
+          echo "" >> changelog.txt
+
+          cat changelog.txt
+          echo "CHANGELOG<<EOF" >> $GITHUB_ENV
+          cat changelog.txt >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v${{ env.NEXT_VERSION }}"
+          name: "Release v${{ env.NEXT_VERSION }}"
+          body: "${{ env.CHANGELOG }}"
+          draft: false
+          prerelease: false
         env:
-          # Disable publishing if not needed; adjust according to your release process.
-          CARGO_RELEASE_PUBLISH: "false"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
