@@ -1,0 +1,16 @@
+{
+    "name": "Rust Dev Container",
+    "build": {
+        "dockerfile": "devcontainer.Dockerfile"
+    },
+    "postCreateCommand": "rustc --version && cargo --version",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "rust-lang.rust-analyzer",
+                "serayuzgur.crates",
+                "tamásfe.even-better-toml"
+            ]
+        }
+    }
+}
