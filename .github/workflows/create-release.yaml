@@ -53,7 +53,7 @@ jobs:
           echo "Next version: $NEXT_VERSION"
 
       - name: Run Cargo Release
-        run: cargo release ${{ env.NEXT_VERSION }} --no-confirm --execute
+        run: cargo release ${{ env.NEXT_VERSION }} --workspace --no-confirm --execute
 
       - name: Push Release Commit and Tag
         run: |

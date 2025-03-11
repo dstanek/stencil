@@ -1,7 +1,6 @@
 [package]
 name = "stencil-source"
 description = "Code to find and load stencils"
-version = "0.0.1"
 edition = { workspace = true }
 rust-version = { workspace = true }
 homepage = { workspace = true }
