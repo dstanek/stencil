@@ -35,12 +35,11 @@ jobs:
           echo "LAST_TAG=$LAST_TAG" >> $GITHUB_ENV
           echo "Last version: $LAST_TAG"
 
-      - name: Determine Next Version
-        id: next_version
+      - name: Determine Bump
+        id: bump_type
         run: |
           LAST_TAG=${{ env.LAST_TAG }}
           LABELS="${{ steps.get_labels.outputs.labels }}"
-          NEXT_BUMP="patch"
 
           # Determine version bump from the commit messages
           CHANGES=$(git log "$LAST_TAG"..HEAD --pretty=format:"%s")
@@ -48,8 +47,11 @@ jobs:
             NEXT_BUMP="minor"
           elif echo "$CHANGES" | grep -qE "^(BREAKING CHANGE|breaking):"; then
             NEXT_BUMP="major"
+          elif echo "$CHANGES" | grep -qE "^(fix|bug):"; then
+            NEXT_BUMP="patch"
+          else
+            NEXT_BUMP=""
           fi
-          echo "NEXT_BUMP=$NEXT_BUMP"
 
           # Override using labels
           if echo "$LABELS" | grep -q "minor"; then
@@ -58,16 +60,27 @@ jobs:
             NEXT_BUMP="major"
           fi
 
+          echo "NEXT_BUMP=$NEXT_BUMP" >> $GITHUB_ENV
+          echo "Bump type: $NEXT_BUMP"
+
+      - name: Determine Next Version
+        id: next_version
+        if: steps.bump_type.outputs.NEXT_BUMP != ''
+        run: |
+          NEXT_BUMP=${{ steps.bump_type.outputs.NEXT_BUMP }}
+
           NEXT_VERSION=$(cargo release version $NEXT_BUMP --workspace --no-confirm)
           echo "NEXT_VERSION=$NEXT_VERSION" >> $GITHUB_ENV
           echo "Next version: $NEXT_VERSION"
 
       - name: Generate Changelog using git-cliff
+        if: steps.bump_type.outputs.NEXT_BUMP != ''
         run: |
           git-cliff --tag v${{ env.NEXT_VERSION }} -o CHANGELOG.md
           cat CHANGELOG.md
 
       - name: Commit Changelog Before Releasing
+        if: steps.bump_type.outputs.NEXT_BUMP != ''
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
@@ -75,9 +88,11 @@ jobs:
           git commit -m "chore: update changelog for v${{ env.NEXT_VERSION }}"
 
       - name: Run Cargo Release
+        if: steps.bump_type.outputs.NEXT_BUMP != ''
         run: cargo release ${{ env.NEXT_VERSION }} --workspace --no-confirm --execute
 
       - name: Push Release Commit and Tag
+        if: steps.bump_type.outputs.NEXT_BUMP != ''
         run: git push origin main --follow-tags
 
 #      - name: Generate Changelog from Commits
@@ -97,6 +112,7 @@ jobs:
 #          echo "EOF" >> $GITHUB_ENV
 
       - name: Upload Changelog as Artifact
+        if: steps.bump_type.outputs.NEXT_BUMP != ''
         uses: actions/upload-artifact@v4
         with:
           name: Changelog
