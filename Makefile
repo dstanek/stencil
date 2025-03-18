@@ -43,3 +43,12 @@ test-plan: $(TEST_IMAGE_DETAILS) stencil
 		-v $(PWD)/target/debug/:/stencil:Z \
 		$(TEST_IMAGE_NAME) \
 		pytest tests.py --collect-only -vv
+
+.PHONY: cicd-tests
+cicd-tests: $(TEST_IMAGE_DETAILS) stencil
+	echo "Installing CI/CD test requirements..."
+	@(cd tests; pip install -r requirements.txt)
+	echo "Running Python-based tests"
+	@pytest tests.py -vv
+	echo "Running Rust-based tests"
+	@cargo test
