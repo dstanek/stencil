@@ -1,11 +1,10 @@
 // Copyright (c) 2025 David Stanek <dstanek@dstanek.com>
 
-mod file;
-use std::collections::HashMap;
-
-use file::File;
-
+use serde_json::Map;
 use stencil_rendering::{render, RenderError};
+
+mod file;
+use file::File;
 
 macro_rules! assert_contains {
     ($observed:expr, $expected:expr) => {
@@ -30,7 +29,7 @@ macro_rules! assert_contains {
 
 #[test]
 fn test_broken_template() {
-    let no_vars = HashMap::new();
+    let no_vars = Map::new();
 
     let file = File::new("{{ broken_var }");
     let observed = render(&file, &file, &no_vars);

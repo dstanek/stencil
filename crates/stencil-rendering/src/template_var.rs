@@ -5,6 +5,7 @@
 pub enum TemplateVar {
     String(String),
     Int(i64),
+    Bool(bool),
 }
 
 impl From<&str> for TemplateVar {
@@ -28,5 +29,11 @@ impl From<i64> for TemplateVar {
 impl From<i32> for TemplateVar {
     fn from(i: i32) -> Self {
         TemplateVar::Int(i as i64)
+    }
+}
+
+impl From<bool> for TemplateVar {
+    fn from(b: bool) -> Self {
+        TemplateVar::Bool(b)
     }
 }

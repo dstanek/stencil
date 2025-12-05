@@ -1,11 +1,12 @@
 // Copyright (c) 2024-2025 David Stanek <dstanek@dstanek.com>
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
 use serde::Deserialize;
 use serde::Serialize;
+use serde_json::{Map, Value};
 
 use stencil_error::StencilError;
 
@@ -13,7 +14,7 @@ use stencil_error::StencilError;
 pub struct TargetConfig {
     pub stencil: ConfigStencil,
     pub project: ConfigProject,
-    pub arguments: BTreeMap<String, String>,
+    pub arguments: Map<String, Value>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -65,7 +66,17 @@ impl TargetConfig {
                 _ => {
                     if key.starts_with("arguments.") {
                         let arg_key = key.trim_start_matches("arguments.").to_string();
-                        self.arguments.insert(arg_key, value);
+                        // Try to parse as a JSON type
+                        if let Ok(parsed_value) = serde_json::from_str::<Value>(&value) {
+                            self.arguments.insert(arg_key, parsed_value);
+                        //} else if let Ok(parsed_value) = toml::from_str::<Value>(&value) {
+                        //    self.arguments.insert(arg_key, parsed_value);
+                        //} else if let Ok(parsed_value) = serde_yaml::from_str::<Value>(&value) {
+                        //    self.arguments.insert(arg_key, parsed_value);
+                        } else {
+                            // If parsing fails, treat it as a string
+                            self.arguments.insert(arg_key, Value::String(value));
+                        }
                     } else {
                         eprintln!("Unknown override key: {key}");
                     }

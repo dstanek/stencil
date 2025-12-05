@@ -1,12 +1,13 @@
 // Copyright (c) 2024-2025 David Stanek <dstanek@dstanek.com>
 
-use std::collections::HashMap;
 use std::path::PathBuf;
+
+use serde_json::Value;
 
 use crate::target_config::TargetConfig;
 use stencil_error::StencilError;
 use stencil_rendering::Renderable as RenderableTrait;
-use stencil_rendering::{render, render_str, TemplateVar};
+use stencil_rendering::{render, render_str};
 use stencil_source::{Directory, File, Renderable};
 
 struct RenderableFile<'a>(&'a File);
@@ -20,7 +21,7 @@ impl<'a> RenderableTrait for RenderableFile<'a> {
 
 pub struct RenderingIterator {
     renderables: Vec<Renderable>,
-    variables: HashMap<String, TemplateVar>,
+    arguments: Value,
     index: usize,
 }
 
@@ -38,7 +39,7 @@ impl Iterator for RenderingIterator {
         match renderable {
             Renderable::File(file) => {
                 let mut dest_path =
-                    PathBuf::from(render_str(&file.relative_path, &self.variables).unwrap()); // TODO: catch bad rendering (etc...missing variable)
+                    PathBuf::from(render_str(&file.relative_path, &self.arguments).unwrap()); // TODO: catch bad rendering (etc...missing variable)
 
                 if dest_path.extension().map_or(true, |ext| ext != "jinja") {
                     return Some(Ok(Renderable::File(File {
@@ -48,7 +49,7 @@ impl Iterator for RenderingIterator {
                 }
 
                 let rf = RenderableFile(file);
-                let content = render(&rf, &rf, &self.variables).unwrap();
+                let content = render(&rf, &rf, &self.arguments).unwrap();
 
                 dest_path.set_extension("");
                 Some(Ok(Renderable::File(File {
@@ -58,7 +59,7 @@ impl Iterator for RenderingIterator {
             }
             Renderable::Directory(directory) => {
                 Some(Ok(Renderable::Directory(Directory {
-                    relative_path: render_str(&directory.relative_path, &self.variables).unwrap(), // TODO: catch bad rendering (etc...missing variable)
+                    relative_path: render_str(&directory.relative_path, &self.arguments).unwrap(), // TODO: catch bad rendering (etc...missing variable)
                 })))
             }
         }
@@ -66,20 +67,18 @@ impl Iterator for RenderingIterator {
 }
 
 impl RenderingIterator {
-    pub fn new(renderables: Vec<Renderable>, config: &TargetConfig) -> Self {
-        let mut variables = HashMap::from([(
-            "project_name".to_string(),
-            TemplateVar::from(config.project.name.clone()),
-        )]);
+    pub fn new(renderables: Vec<Renderable>, config: &TargetConfig) -> Result<Self, StencilError> {
+        //let mut variables = HashMap::from([(
+        //    "project_name".to_string(),
+        //    TemplateVar::from(config.project.name.clone()),
+        //)]);
 
-        for (key, value) in &config.arguments {
-            variables.insert(key.clone(), TemplateVar::from(value.clone()));
-        }
+        let arguments = serde_json::to_value(config)?;
 
-        Self {
+        Ok(Self {
             renderables,
-            variables,
+            arguments,
             index: 0,
-        }
+        })
     }
 }

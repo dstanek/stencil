@@ -717,6 +717,7 @@ dependencies = [
  "anyhow",
  "clap",
  "serde",
+ "serde_json",
  "similar",
  "stencil-error",
  "stencil-rendering",
@@ -729,6 +730,7 @@ dependencies = [
 name = "stencil-error"
 version = "0.2.0"
 dependencies = [
+ "serde_json",
  "thiserror",
  "toml",
 ]
@@ -739,6 +741,7 @@ version = "0.2.0"
 dependencies = [
  "minijinja",
  "regex",
+ "serde_json",
  "textwrap",
  "thiserror",
 ]

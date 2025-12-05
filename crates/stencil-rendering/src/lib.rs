@@ -5,11 +5,12 @@ use std::collections::HashMap;
 
 use minijinja::value::{Kwargs, Rest, Value};
 use minijinja::{Environment, State};
+use serde_json::Value as JsonValue;
 
 mod extract;
-mod template_var;
+//mod template_var;
 
-pub use template_var::TemplateVar;
+//pub use template_var::TemplateVar;
 
 #[derive(Debug, thiserror::Error)]
 pub enum RenderError {
@@ -105,7 +106,7 @@ fn transform_indent_content(src: &str) -> String {
 pub fn render<T: Renderable>(
     src: &T,
     dest: &T,
-    vars: &HashMap<String, TemplateVar>,
+    context: &JsonValue,
 ) -> Result<String, RenderError> {
     let mut env = Environment::new();
     let content_blocks = extract::extract_blocks(dest.content())
@@ -115,16 +116,17 @@ pub fn render<T: Renderable>(
     env.add_global("content_blocks", content_blocks);
     env.add_function("user_content", user_content_function);
 
-    let context = vars
-        .iter()
-        .map(|(k, v)| {
-            let v = match v {
-                TemplateVar::String(s) => Value::from(s),
-                TemplateVar::Int(i) => Value::from(*i),
-            };
-            (k.to_string(), v)
-        })
-        .collect::<HashMap<String, Value>>();
+    //let context = vars
+    //    .iter()
+    //    .map(|(k, v)| {
+    //        let v = match v {
+    //            TemplateVar::String(s) => Value::from(s),
+    //            TemplateVar::Int(i) => Value::from(*i),
+    //            TemplateVar::Bool(b) => Value::from(*b),
+    //        };
+    //        (k.to_string(), v)
+    //    })
+    //    .collect::<HashMap<String, Value>>();
     let transformed = transform_indent_content(src.content());
     let tmpl = env.template_from_str(&transformed)?;
     tmpl.render(context).map_err(|e| {
@@ -133,23 +135,21 @@ pub fn render<T: Renderable>(
     })
 }
 
-pub fn render_str(
-    template: &str,
-    vars: &HashMap<String, TemplateVar>,
-) -> Result<String, RenderError> {
+pub fn render_str(template: &str, context: &JsonValue) -> Result<String, RenderError> {
     let mut env = Environment::new();
     env.set_keep_trailing_newline(true);
 
-    let context = vars
-        .iter()
-        .map(|(k, v)| {
-            let v = match v {
-                TemplateVar::String(s) => Value::from(s),
-                TemplateVar::Int(i) => Value::from(*i),
-            };
-            (k.to_string(), v)
-        })
-        .collect::<HashMap<String, Value>>();
+    //let context = vars
+    //   .iter()
+    //  .map(|(k, v)| {
+    //     let v = match v {
+    //        TemplateVar::String(s) => Value::from(s),
+    //       TemplateVar::Int(i) => Value::from(*i),
+    //      TemplateVar::Bool(b) => Value::from(*b),
+    // };
+    //(k.to_string(), v)
+    // })
+    //.collect::<HashMap<String, Value>>();
     let tmpl = env.template_from_str(template)?;
     tmpl.render(context).map_err(|e| {
         let detail = e.detail().unwrap_or("").to_string();

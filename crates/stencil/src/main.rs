@@ -7,7 +7,6 @@
     clippy::cargo
 )]
 
-use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -103,7 +102,12 @@ fn main() {
     if let Err(err) = run() {
         // Write a colored error message to stderr
         let mut stderr = StandardStream::stderr(ColorChoice::Auto);
-        output::write_bold(&mut stderr, Color::Red, format!("Error: {err}\n").as_str()).unwrap();
+        output::write_bold(
+            &mut stderr,
+            Color::Red,
+            format!("Error: {:#}\n", err).as_str(),
+        )
+        .unwrap();
 
         // Set a non-zero exit code
         std::process::exit(1);
@@ -124,7 +128,7 @@ fn run() -> Result<()> {
             };
             let config_path = dest.join(&cli.config);
             let mut config = TargetConfig::load(config_path.to_str().unwrap())
-                .context(format!("loading config file: {}", config_path.display()))?;
+                .with_context(|| format!("loading config file: {}", config_path.display()))?;
             match config.apply_overrides(cli.override_values) {
                 Ok(config) => config,
                 Err(e) => {
@@ -176,9 +180,13 @@ fn init(show_diff: bool, dest: &PathBuf, src: &str, args: &InitArgs) -> Result<(
     // TODO: ask questions from the source config
 
     // Create the initial config file
-    let mut arguments = BTreeMap::new();
+    //let mut arguments = BTreeMap::new();
+    //for (key, value) in &args.arguments {
+    //    arguments.insert(key.clone(), value.clone());
+    //}
+    let mut arguments = serde_json::Map::new();
     for (key, value) in &args.arguments {
-        arguments.insert(key.clone(), value.clone());
+        arguments.insert(key.clone(), serde_json::to_value(value.clone())?);
     }
 
     let config = TargetConfig {
@@ -327,7 +335,7 @@ fn apply_changes(dest: &Path, config: &TargetConfig) -> Result<(), StencilError>
 
 pub fn create_iterator(config: &TargetConfig) -> Result<RenderingIterator, StencilError> {
     let iterator = renderables(&config.project.src)?;
-    Ok(RenderingIterator::new(iterator, config))
+    Ok(RenderingIterator::new(iterator, config)?)
 
     //let mut ignore = Vec::new();
     // ignore.push(".gitignore".to_string());

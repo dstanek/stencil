@@ -20,6 +20,9 @@ pub enum StencilError {
     #[error("Deserialization error:{0}")]
     TomlDeserialization(#[from] toml::de::Error),
 
+    #[error("JSON Deserialization error: {0}")]
+    JsonDeserialization(#[from] serde_json::Error),
+
     #[error("Serialization error: {0}")]
     TomlSerialization(#[from] toml::ser::Error),
 
